@@ -1,7 +1,7 @@
 {
   "id": "/",
-  "name": "Filament Library",
-  "short_name": "Filaments",
+  "name": "Spool Studio",
+  "short_name": "Spool Studio",
   "description": "Your private filament library and synced NFC programmer.",
   "lang": "en-GB",
   "start_url": "/nfc.html",

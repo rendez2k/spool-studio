@@ -1,4 +1,6 @@
-# Filament Library
+# Spool Studio
+
+The generic edition of Filament Library, published separately as Spool Studio. Each signed-in account starts with an empty private library; existing libraries on other Sites are not copied or shared.
 
 A private filament inventory for each signed-in user: organise spools, compare a 3MF project with stock, and send selected colours to an Android NFC programmer.
 
@@ -43,6 +45,8 @@ This repository is not connected to automatic deployment. Pushing here does not 
 **Do not deploy this Worker directly on an untrusted public endpoint.** Its authentication header is secure only behind the Sites gateway, which verifies login and removes client-supplied identity headers. Another host requires a verified server-side authentication adapter and login routes first. GitHub Pages alone cannot run this app.
 
 ## Data and security
+
+The print matcher offers Amazon UK searches for included colours without a confirmed exact match, using the site owner's public tracking ID configured in `out/shopping.js`. The links are labelled as paid links and accompanied by the Associate disclosure. Unnamed colours use approximate colour families, not verified product matches. Prices, stock and exact variants are not claimed; matching ranks never depend on shopping links. Forks should replace the tracking ID with their own approved ID and update its test. Before using affiliate links, list the deployed site in your Associates account and check any applicable installed-app approval requirements.
 
 Inventory and phone batches are keyed by authenticated user ID, never by an email or a user ID supplied in a JSON body. Writes require the same origin, bounded validated input and revision checks. Anonymous users get an empty sign-in page; protected APIs return 401.
 
