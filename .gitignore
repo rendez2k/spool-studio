@@ -1,0 +1,13 @@
+dist/
+node_modules/
+.local/
+.openai/hosting.json
+.env
+.env.*
+!.env.example
+server/legacy-inventory.json
+out/previews/
+.codex/
+.cursor/
+.claude/
+.grok/

@@ -1,0 +1,60 @@
+[
+  {
+    "name": "sample-matte.3mf",
+    "settings": {
+      "filament_colour": [
+        "#ED8930",
+        "#805A40",
+        "#181818",
+        "#E8D7B0"
+      ],
+      "filament_settings_id": [
+        "Generic PLA Matte",
+        "Generic PLA Matte",
+        "Generic PLA Matte",
+        "Generic PLA Matte"
+      ],
+      "filament_type": [
+        "PLA",
+        "PLA",
+        "PLA",
+        "PLA"
+      ],
+      "filament_vendor": [
+        "Example Filament",
+        "Example Filament",
+        "Example Filament",
+        "Example Filament"
+      ]
+    }
+  },
+  {
+    "name": "sample-standard.3mf",
+    "settings": {
+      "filament_colour": [
+        "#ED8930",
+        "#805A40",
+        "#181818",
+        "#E8D7B0"
+      ],
+      "filament_settings_id": [
+        "Generic PLA Basic",
+        "Generic PLA Basic",
+        "Generic PLA Basic",
+        "Generic PLA Basic"
+      ],
+      "filament_type": [
+        "PLA",
+        "PLA",
+        "PLA",
+        "PLA"
+      ],
+      "filament_vendor": [
+        "Example Filament",
+        "Example Filament",
+        "Example Filament",
+        "Example Filament"
+      ]
+    }
+  }
+]
