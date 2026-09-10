@@ -68,7 +68,8 @@ test('CSV supports optional purchase references while old cost templates still p
 });
 
 function element(tag='div'){
- return {tag,children:[],value:'',textContent:'',hidden:false,disabled:false,checked:false,append(...nodes){this.children.push(...nodes)},replaceChildren(...nodes){this.children=nodes},setAttribute(){},removeAttribute(){},addEventListener(name,fn){this['on'+name]=fn},focus(){},scrollIntoView(){},reportValidity(){return true},
+ return {tag,children:[],dataset:{},style:{},value:'',textContent:'',hidden:false,disabled:false,checked:false,append(...nodes){for(const node of nodes)node.parent=this;this.children.push(...nodes)},replaceChildren(...nodes){this.children=[];this.append(...nodes)},setAttribute(){},removeAttribute(){},addEventListener(name,fn){this['on'+name]=fn},focus(){},scrollIntoView(){},reportValidity(){return true},
+ querySelector(selector){if(selector==='legend input[type="checkbox"]')return this.children.find(child=>child.tag==='legend')?.querySelectorAll('input[type="checkbox"]')[0]},closest(tag){return this.tag===tag?this:this.parent?.closest(tag)},
  querySelectorAll(selector){const all=this.children.flatMap(child=>[child,...child.querySelectorAll('*')]);return selector==='*'?all:selector==='.entry'?all.filter(child=>child.tag==='fieldset'):selector==='input[type="checkbox"]'?all.filter(child=>child.type==='checkbox'):[]}
  };
 }
@@ -78,11 +79,12 @@ test('import screen switches modes without saving, clears approvals and posts on
  const get=id=>{if(!nodes.has(id))nodes.set(id,element());return nodes.get(id)};
  get('import-mode').value='add';get('source-format').value='text';
  let drop=false;
- const context=vm.createContext({document:{getElementById:get,createElement:element,createTextNode:text=>({...element(),textContent:text})},CostImport:costImport,SpoolCost:costing,FilamentCsv:csv,FilamentImport:require('../out/import-parser.js'),FilamentColours:require('../out/colour-catalog.js'),URL,AbortSignal,crypto,TextEncoder,Uint8Array,setTimeout,clearTimeout,addEventListener(){},
+ const context=vm.createContext({document:{getElementById:get,createElement:element,querySelectorAll:()=>[],createTextNode:text=>({...element(),textContent:text})},CostImport:costImport,SpoolCost:costing,FilamentCsv:csv,FilamentImport:require('../out/import-parser.js'),FilamentColours:require('../out/colour-catalog.js'),URL,AbortSignal,crypto,TextEncoder,Uint8Array,setTimeout,clearTimeout,addEventListener(){},
  fetch:async(url,options)=>{assert.equal(url,'/api/library');const body=options.body?JSON.parse(options.body):null;if(body)posts.push(body);const response=await handleLibrary(request('alice',body),{DB});if(body&&drop){drop=false;throw Error('Reply lost')}return response}
  });context.window=context;
  try{
   vm.runInContext(readFileSync(new URL('../out/cost-import-review.js',import.meta.url),'utf8'),context);
+  vm.runInContext(readFileSync(new URL('../out/import-review.js',import.meta.url),'utf8'),context);
   vm.runInContext(readFileSync(new URL('../out/import.js',import.meta.url),'utf8'),context);
   await new Promise(resolve=>setImmediate(resolve));
   get('source-text').value='Bambu Lab PLA Basic Jade White 1kg with spool\nQuantity: 2\nCost per roll: GBP 12.99\nEntry ID: purchase-one';
@@ -96,6 +98,6 @@ test('import screen switches modes without saving, clears approvals and posts on
   assert.equal(posts.length,2);assert.equal(posts[0].requestId,posts[1].requestId);assert.equal(posts[0].kind,'cost-update');assert.equal(posts[0].spools,undefined);assert.equal(posts[0].sourceHash,undefined);
   assert.deepEqual(posts[0].changes,[change()]);assert.match(get('import-message').textContent,/Updated 1 costs/);
   get('source-text').value='Bambu Lab PLA Basic Jade White 1kg with spool\nCost per roll: GBP 15.00\nEntry ID: purchase-one';get('extract').onclick();assert.equal(vm.runInContext('rows[0].selected',context),false);
-  get('approve-import').checked=true;get('import-mode').value='add';get('import-mode').onchange();assert.equal(vm.runInContext('rows.length',context),0);assert.equal(get('approve-import').checked,false);assert.equal(posts.length,2);
+  get('approve-import').checked=true;get('import-mode').value='add';get('import-mode').onchange();assert.equal(vm.runInContext('rows.length',context),1);assert.equal(get('approve-import').checked,false);assert.equal(posts.length,2);
  }finally{DB.close()}
 });

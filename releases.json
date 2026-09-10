@@ -1,5 +1,14 @@
 [
   {
+    "version": "1.6.0",
+    "date": "2026-09-10",
+    "title": "A calmer way to import",
+    "changes": [
+      "Review detected filament in a compact table, with quantities, costs, similar stock and repeated entries visible at a glance. Open one row for corrections and matching purchase details; select new entries across the batch or deselect everything.",
+      "Gmail’s Review selected orders now reads the chosen messages straight into the review table, without a copy-text step. Email results are compact and scroll within their own list. Source text remains available, and nothing is saved without your review. CSV, photo and costs-only imports use the same table."
+    ]
+  },
+  {
     "version": "1.5.1",
     "date": "2026-09-10",
     "title": "A little nudge for new updates",

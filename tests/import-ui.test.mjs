@@ -6,11 +6,12 @@ import {createRequire} from 'node:module';
 import {handleLibrary} from '../server/library.mjs';
 import {localDatabase} from '../scripts/local-db.mjs';
 const require=createRequire(import.meta.url),code=readFileSync(new URL('../out/import.js',import.meta.url),'utf8');
-function node(){
- return {children:[],value:'',checked:false,disabled:false,hidden:false,textContent:'',files:[],className:'',
-  append(...children){this.children.push(...children)},replaceChildren(...children){this.children=children},removeAttribute(name){delete this[name]},remove(){},focus(){},scrollIntoView(){},
+function node(tag='div'){
+ return {tag,children:[],dataset:{},style:{},classList:{add(){}},value:'',checked:false,disabled:false,hidden:false,textContent:'',files:[],className:'',
+  append(...children){for(const child of children)if(child&&typeof child==='object')child.parent=this;this.children.push(...children)},replaceChildren(...children){this.children=[];this.append(...children)},setAttribute(name,value){this[name]=value},removeAttribute(name){delete this[name]},remove(){},focus(){},scrollIntoView(){},
   addEventListener(name,handler){this['on'+name]=handler},reportValidity(){return true},
-  querySelectorAll(selector){return this.children.flatMap(child=>[...(selector==='.'+child.className?[child]:[]),...(child.querySelectorAll?child.querySelectorAll(selector):[])])},
+  querySelectorAll(selector){return this.children.flatMap(child=>[...(selector==='.'+child.className||selector==='input,select,textarea'&&['input','select','textarea'].includes(child.tag)||selector==='input[type="checkbox"],button'&&(child.type==='checkbox'||child.tag==='button')||selector==='input[type="checkbox"]'&&child.type==='checkbox'?[child]:[]),...(child.querySelectorAll?child.querySelectorAll(selector):[])])},
+  querySelector(selector){if(selector==='legend input[type="checkbox"]')return this.children.find(child=>child.tag==='legend')?.querySelectorAll('input[type="checkbox"]')[0];return this.querySelectorAll(selector)[0]},closest(tag){return this.tag===tag?this:this.parent?.closest(tag)},
   getContext(){return {drawImage(){}}},toBlob(callback){callback(new Blob(['image'],{type:'image/png'}))}
  };
 }
@@ -19,7 +20,7 @@ async function harness(){
  const get=id=>{if(!elements.has(id))elements.set(id,node());return elements.get(id)};
  const window={addEventListener(name,handler){events[name]=handler}};
  class TestURL extends URL{static createObjectURL(){return 'blob:test'}static revokeObjectURL(){}}
- const context=vm.createContext({window,document:{getElementById:get,createElement:node,head:node()},CostImport:require('../out/cost-import-core.js'),FilamentImport:require('../out/import-parser.js'),FilamentCsv:require('../out/import-csv.js'),FilamentColours:require('../out/colour-catalog.js'),URL:TestURL,Blob,AbortSignal,TextEncoder,TextDecoder,crypto,setTimeout,clearTimeout,createImageBitmap:async()=>({width:800,height:400,close(){}}),
+ const context=vm.createContext({window,document:{getElementById:get,createElement:node,createTextNode:text=>({...node(),textContent:text}),querySelectorAll:()=>[],head:node()},SpoolCost:require('../out/cost-core.js'),CostImport:require('../out/cost-import-core.js'),FilamentImport:require('../out/import-parser.js'),FilamentCsv:require('../out/import-csv.js'),FilamentColours:require('../out/colour-catalog.js'),URL:TestURL,Blob,AbortSignal,TextEncoder,TextDecoder,crypto,setTimeout,clearTimeout,createImageBitmap:async()=>({width:800,height:400,close(){}}),
   fetch:async(url,options)=>{
    assert.equal(url,'/api/library');
    if(options.body)posts.push(JSON.parse(options.body));
@@ -27,6 +28,8 @@ async function harness(){
    if(drop&&options.method==='POST'){drop=false;throw Error('Response lost')}
    return response;
   }});
+ vm.runInContext(readFileSync(new URL('../out/import-review.js',import.meta.url),'utf8'),context);
+ vm.runInContext(readFileSync(new URL('../out/cost-import-review.js',import.meta.url),'utf8'),context);context.CostImportReview=window.CostImportReview;
  vm.runInContext(code,context);const run=text=>vm.runInContext(text,context);
  await new Promise(resolve=>setImmediate(resolve));
  return {DB,get,window,events,posts,run,setUser(value){user=value},loseNextReply(){drop=true}};
@@ -70,7 +73,7 @@ test('large imports render only one page, preserve edits and choices, and locate
  try{
   app.get('source-format').value='csv';
   app.get('source-text').value=csv.columns.join(',')+'\n'+Array.from({length:500},(_,index)=>'SUNLU,PLA Matte,PLA,matte,Orange '+index+',#EF8D34,2,1000,refill,2026-09-10,Check label').join('\n');
-  app.get('extract').onclick();assert.equal(app.run('rows.length'),500);assert.equal(app.get('review-list').children.length,20);assert.equal(app.get('review-page').children.length,25);
+  app.get('extract').onclick();assert.equal(app.run('rows.length'),500);assert.equal(app.get('review-list').children[0].children[2].children.length,40);assert.equal(app.get('review-page').children.length,25);
   app.run("rows[0].spool.notes='Edited on first page';rows[0].selected=false;rows[42].spool.hex='wrong'");
   app.get('review-next').onclick();assert.equal(app.run('reviewPage'),1);assert.match(app.get('review-status').textContent,/21–40/);
   app.get('review-prev-bottom').onclick();assert.equal(app.run('reviewPage'),0);assert.equal(app.run('rows[0].selected'),false);assert.equal(app.run('rows[0].spool.notes'),'Edited on first page');
@@ -94,5 +97,48 @@ test('CSV upload uses explicit review, preserves drafts and drops account-stale 
   let resolveRead;app.get('source-csv').files=[{...file,arrayBuffer:()=>new Promise(resolve=>{resolveRead=resolve})}];
   const running=app.get('source-csv').onchange();app.setUser('bob');await app.events.focus();resolveRead(new TextEncoder().encode(csv).buffer);await running;
   assert.equal(app.get('source-text').value,'');assert.equal(app.run('rows.length'),0);assert.equal(app.posts.length,1);
+ }finally{app.DB.close()}
+});
+
+test('compact table exposes matches, edits unselected rows, syncs selection and reveals invalid details',async()=>{
+ const app=await harness();
+ try{
+  ready(app);await app.get('review-form').onsubmit({preventDefault(){}});ready(app);
+  const body=app.get('review-list').children[0].children[2],summary=body.children[0],detail=body.children[1];
+  assert.equal(detail.hidden,true);assert.equal(summary.children[4].children[0].textContent,'Similar stock in library');
+  const button=summary.children[5].children[0];button.onclick();assert.equal(detail.hidden,false);assert.equal(button['aria-expanded'],'true');
+  const entry=detail.children[0].children[1],fields=entry.children.find(child=>child.className==='fields');
+  const colour=fields.children[4].children[0];assert.equal(colour.disabled,false);colour.value='Blue';colour.oninput();
+  assert.equal(app.run('rows[0].selected'),false);assert.equal(summary.children[1].children[1].textContent,'Blue');assert.equal(summary.children[4].children[0].textContent,'New to library');
+  app.get('select-new').onclick();assert.equal(app.run('rows[0].selected'),true);assert.equal(app.get('approve-import').checked,false);
+  const updated=app.get('review-list').children[0].children[2];assert.equal(updated.children[1].hidden,true);
+  updated.children[1].children[0].children[1].oninvalid();assert.equal(updated.children[1].hidden,false);
+  const checkbox=updated.children[0].children[0].children[0];checkbox.checked=false;checkbox.onchange();assert.equal(app.run('rows[0].selected'),false);
+  app.get('select-none').onclick();assert.equal(app.get('save-import').disabled,true);
+ }finally{app.DB.close()}
+});
+
+test('table costs-only mode preserves edits and never auto-selects an ambiguous purchase',async()=>{
+ const app=await harness();
+ try{
+  ready(app);await app.get('review-form').onsubmit({preventDefault(){}});ready(app);
+  app.run("rows[0].spool.notes='Keep this edit';rows[0].spool.costPerRoll=12.99;rows[0].spool.costCurrency='GBP'");
+  app.get('import-mode').value='costs';app.get('import-mode').onchange();
+  assert.equal(app.run('rows[0].spool.notes'),'Keep this edit');assert.equal(app.run('rows[0].selected'),false);assert.equal(app.get('select-new').hidden,true);
+  const summary=app.get('review-list').children[0].children[2].children[0];assert.equal(summary.children[4].children[0].textContent,'Choose purchase');assert.equal(summary.children[3].textContent,'GBP 12.99');
+  app.get('import-mode').value='add';app.get('import-mode').onchange();assert.equal(app.run('rows[0].selected'),false);assert.equal(app.run('rows[0].spool.notes'),'Keep this edit');
+ }finally{app.DB.close()}
+});
+
+test('unchecked invalid fields stay editable without blocking a valid selected import',async()=>{
+ const app=await harness();
+ try{
+  ready(app);app.get('add-blank').onclick();
+  const body=app.get('review-list').children[0].children[2],second=body.children[3].children[0].children[1];
+  const input=second.querySelectorAll('input,select,textarea').find(input=>input.type==='number');
+  input.value='-1';input.oninput();let validations=0;input.reportValidity=()=>{validations++;return false};
+  const choice=body.children[2].children[0].children[0];choice.checked=false;choice.onchange();
+  assert.equal(app.get('review-form').noValidate,true);app.get('approve-import').checked=true;app.get('approve-import').onchange();
+  await app.get('review-form').onsubmit({preventDefault(){}});assert.equal(validations,0);assert.equal(app.posts.length,1);assert.equal(app.posts[0].spools.length,1);
  }finally{app.DB.close()}
 });

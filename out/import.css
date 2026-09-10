@@ -12,3 +12,55 @@
 .cost-entry>label.check{display:flex}
 .cost-entry select{margin-top:6px;max-width:100%}
 .cost-current{overflow-wrap:anywhere;font-size:.875rem}
+.workspace{display:block;margin-top:24px}
+.source{margin-bottom:32px}
+.source h2{display:none}
+#source-panel>summary,#source-text-panel>summary{cursor:pointer;font-weight:600;padding:12px 0;min-height:44px}
+#source-panel{border-block:1px solid var(--line);padding:8px 0}
+.source-picker{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 24px}
+.source-picker [aria-pressed=true]{border-color:var(--accent);color:var(--accent);background:color-mix(in srgb,var(--accent) 8%,var(--surface))}
+.source label{display:block;font-size:.875rem;font-weight:600;margin:16px 0 6px}
+#source-text-panel textarea{max-height:280px;margin-top:12px}
+#csv-panel,#image-panel{max-width:720px}
+#gmail-panel{margin:0 0 16px;border:0;padding:0}
+#gmail-panel>summary{display:none}
+#gmail-panel>.privacy{max-width:90ch}
+#gmail-results{max-height:350px;overflow:auto;overscroll-behavior:contain;scrollbar-color:var(--muted) var(--bg);border-block:1px solid var(--line);margin:12px 0}
+#gmail-results:empty{display:none}
+#gmail-results label{display:grid;grid-template-columns:24px minmax(0,2fr) minmax(0,1fr) 100px;gap:12px;align-items:center;margin:0;padding:12px;border-color:var(--line);font-weight:400}
+#gmail-results label:has(input:checked){background:color-mix(in srgb,var(--accent) 7%,var(--surface))}
+#gmail-results input{width:20px;height:20px;accent-color:var(--accent)}
+.gmail-subject{font-weight:600}.gmail-sender,.gmail-date{color:var(--muted);font-size:.8125rem}
+.import-purpose{display:flex;gap:24px;align-items:center;margin-bottom:28px}.import-purpose label{max-width:320px;flex:1;font-size:.875rem;font-weight:600}.import-purpose select{margin-top:6px}.import-purpose p{flex:1}
+#review-tools{display:inline-flex;gap:8px;flex-wrap:wrap}
+.import-table{width:100%;border-collapse:collapse;font-size:.875rem;table-layout:fixed}
+.import-table caption{text-align:left}
+.import-table th{text-align:left;color:var(--muted);font-size:.8125rem;font-weight:600;padding:12px;border-bottom:1px solid var(--line)}
+.import-table th:first-child{width:52px}.import-table th:nth-child(2){width:29%}.import-table th:nth-child(3){width:16%}.import-table th:nth-child(4){width:13%}.import-table th:last-child{width:100px}
+.import-summary td{padding:18px 12px;border-bottom:1px solid var(--line);vertical-align:middle;overflow-wrap:anywhere}
+.import-summary:has(.import-choice input:checked){background:color-mix(in srgb,var(--accent) 4%,var(--surface))}
+.import-choice input{width:20px;height:20px;accent-color:var(--accent);cursor:pointer}
+.import-table button{white-space:nowrap;padding-inline:12px}.import-table th:last-child{width:108px}
+.import-secondary{display:block;color:var(--muted);font-size:.8125rem;margin-top:4px;line-height:1.5}
+.import-swatch{display:inline-block;width:18px;height:18px;border:1px solid var(--line);border-radius:4px;vertical-align:middle;margin-right:8px}
+.import-badge{font-weight:600}.import-badge.new{color:var(--accent)}
+.import-table td:nth-child(3),.import-table td:nth-child(4){font-variant-numeric:tabular-nums}
+.import-detail>td{padding:24px;background:var(--surface);border-bottom:1px solid var(--line)}
+.import-detail .entry{max-width:880px;margin:0;border:0;padding:0}
+.import-detail .fields{grid-template-columns:repeat(3,minmax(0,1fr))}
+.import-match-info p{margin-top:0}.import-match-info ul{padding-left:20px;max-height:170px;overflow:auto}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}
+#review-footer{z-index:1;display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:16px;background:var(--surface);margin-top:20px}
+#review-footer .check{flex:1;min-width:220px;font-size:.875rem}#review-footer .hint{flex-basis:100%;order:3;margin:0;font-size:.8125rem}
+@media(max-width:700px){
+ header,main{padding:16px}.import-purpose{display:block}.import-purpose label{display:block;max-width:none}.import-purpose p{margin:10px 0}
+ #gmail-results label{grid-template-columns:24px minmax(0,1fr) 82px;gap:6px 10px}.gmail-sender{grid-column:2;grid-row:2}.gmail-date{grid-column:3;grid-row:1 / 3}
+ .import-table,.import-table tbody{display:block}.import-table thead{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+ .import-summary{display:grid;grid-template-columns:36px minmax(0,1fr);padding:16px 0;border-bottom:1px solid var(--line);gap:8px 0}
+ .import-summary td{display:block;padding:0 8px;border:0;grid-column:2}.import-summary .import-choice{grid-column:1;grid-row:1;padding-top:2px}
+ .import-summary td[data-label]:not(:nth-child(2)):before{content:attr(data-label) ': ';color:var(--muted);font-size:.8125rem}
+ .import-summary .import-secondary{margin-top:2px}.import-summary td:last-child{padding-top:4px}
+ .import-detail,.import-detail>td{display:block}.import-detail>td{padding:16px 8px}.import-detail .fields{grid-template-columns:1fr 1fr}
+ #review-footer{padding:16px 0;background:var(--bg)}#review-footer button{width:100%}
+}
+@media(max-width:420px){.import-detail .fields{grid-template-columns:1fr}}

@@ -2,16 +2,16 @@
 const get=id=>document.getElementById(id);
 let library=null,rows=[],sourceSnapshot='',imageFile=null,imageUrl='',worker=null,reading=false,saving=false,runId=0,accountCheck=0,scriptPromise=null,pendingSave=null;
 let snapshotFormat='text';const costsOnly=()=>get('import-mode').value==='costs';
-let reviewPage=0;
+let reviewPage=0,reviewTable=null;
 const reviewPageSize=20;
 const materialOptions=['PLA','PLA+','PETG','ABS','ASA','TPU','PA','PC','PVA','HIPS','Other'];
 const finishOptions=['unknown','standard','matte','silk','marble','sparkle','wood','glow','satin','metal'];
 const fields=[['brand','Brand'],['product','Product / type'],['material','Material'],['finish','Finish'],['colour','Colour name'],['hex','Colour hex'],['spools','Number of rolls'],['weightGrams','Grams per roll'],['costPerRoll','Cost per roll (not line total)'],['costCurrency','Cost currency (GBP, EUR, USD…)'],['order','Order number (optional)'],['retailer','Retailer (optional)'],['packaging','Packaging'],['date','Purchase / added date'],['notes','Notes / uncertainties']];
 function today(){const date=new Date();return [date.getFullYear(),String(date.getMonth()+1).padStart(2,'0'),String(date.getDate()).padStart(2,'0')].join('-')}
 function message(text){get('import-message').textContent=text}
-function changed(){get('approve-import').checked=false;pendingSave=null;controls()}
+function changed(){get('approve-import').checked=false;pendingSave=null;reviewTable?.refresh();controls()}
 function controls(){
- const ready=Boolean(library)&&!saving;get('review-form').noValidate=costsOnly();
+ const ready=Boolean(library)&&!saving;get('review-form').noValidate=true;
  get('read-image').disabled=!ready||reading||!imageFile||get('source-format').value==='csv';
  get('import-mode').disabled=!ready||reading;get('source-csv').disabled=!ready||reading;get('source-format').disabled=!ready||reading;
  get('cancel-read').hidden=!reading;get('source-image').disabled=!ready||reading;
@@ -28,7 +28,7 @@ function controls(){
  get('save-import').disabled=!ready||reading||!selected||!get('approve-import').checked||get('source-text').value!==sourceSnapshot||(get('source-format').value||'text')!==snapshotFormat;
  get('approve-import').disabled=!ready||reading;
  get('review-list').querySelectorAll('.entry').forEach(entry=>entry.disabled=saving||reading);
- get('review-list').querySelectorAll('input[type="checkbox"]').forEach(input=>input.disabled=saving||reading);
+ get('review-list').querySelectorAll('input[type="checkbox"],button').forEach(input=>input.disabled=saving||reading);get('select-new').disabled=get('select-none').disabled=!ready||reading||!rows.length;get('select-new').hidden=costsOnly();get('review-tools').hidden=!rows.length;
  get('review-heading').textContent=costsOnly()?'2. Review cost updates':'2. Review before adding';
  get('import-mode-help').textContent=costsOnly()?'Fill missing prices without adding stock. Match the original purchase, not just its colour. Existing prices stay protected unless you confirm each replacement.':'Add reviewed entries as new stock. Possible duplicates start unselected.';
  get('approval-copy').textContent=costsOnly()?'I have checked the selected purchase matches and prices across all pages.':'I have checked the selected entries across all pages, quantities and estimated swatches.';
@@ -50,7 +50,7 @@ function cancelRead(text='Reading cancelled. No changes saved.'){
 function clearDraft(){
  cancelRead('');releaseImage();get('source-text').value='';rows=[];sourceSnapshot='';pendingSave=null;reviewPage=0;
  snapshotFormat='text';get('source-format').value='text';get('source-csv').value='';
- get('review-list').replaceChildren();get('approve-import').checked=false;
+ reviewTable=null;get('review-list').replaceChildren();get('source-panel').open=true;get('approve-import').checked=false;
  get('review-status').textContent='Your detected entries will appear here. Nothing is saved automatically.';message('');controls();
 }
 function loseAccount(text){
@@ -75,21 +75,20 @@ async function refreshAccount(){
  controls();
 }
 function markDuplicates(){
- if(costsOnly()){for(const row of rows)CostImport.prepare(row,library.items);return}const previous=[];
+ if(costsOnly()){for(const row of rows)CostImport.prepare(row,library.items);return}
  for(const row of rows){
-  row.duplicate=FilamentImport.duplicates(row.spool,library.items.concat(previous)).length>0;
+  row.duplicate=FilamentImport.duplicates(row.spool,library.items.concat(rows.filter(other=>other!==row).map(other=>other.spool))).length>0;
   if(row.duplicate)row.selected=false;
-  previous.push(row.spool);
  }
 }
 function renderRows(){
- const list=get('review-list');list.replaceChildren();
+ const list=get('review-list');list.replaceChildren();reviewTable=null;
  reviewPage=Math.min(reviewPage,Math.max(0,Math.ceil(rows.length/reviewPageSize)-1));
  get('review-page').replaceChildren();
  for(let index=0;index<Math.ceil(rows.length/reviewPageSize);index++){const option=document.createElement('option');option.value=String(index);option.textContent=(index+1)+' of '+Math.ceil(rows.length/reviewPageSize);get('review-page').append(option)}
  get('review-page').value=String(reviewPage);
- rows.slice(reviewPage*reviewPageSize,(reviewPage+1)*reviewPageSize).forEach((row,offset)=>{
-  const index=reviewPage*reviewPageSize+offset;if(costsOnly()){list.append(CostImportReview.render(row,index,library.items,changed));return}
+ function editor(row,index,onChange){
+  if(costsOnly())return CostImportReview.render(row,index,library.items,onChange);
   const entry=document.createElement('fieldset');entry.className='entry';
   const legend=document.createElement('legend'),choice=document.createElement('label');choice.className='check';
   const checkbox=document.createElement('input');checkbox.type='checkbox';checkbox.checked=row.selected;
@@ -105,9 +104,9 @@ function renderRows(){
    Object.assign(row.spool,FilamentColours.resolve(row.spool));
    const hexInput=colourInputs.get('hex');if(hexInput)hexInput.value=row.spool.hex;
    colourStatus.textContent=FilamentColours.source(row.spool).label+' · '+(row.spool.hex||'Hex needed');
-   automatic.hidden=row.spool.hexMode==='auto';automatic.disabled=!row.selected;
+   automatic.hidden=row.spool.hexMode==='auto';automatic.disabled=saving||reading;
   }
-  automatic.onclick=()=>{row.spool.hexMode='auto';updateColour();changed()};
+  automatic.onclick=()=>{row.spool.hexMode='auto';updateColour();onChange()};
   for(const [key,labelText] of fields){
    const label=document.createElement('label');label.textContent=labelText;
    const options=key==='material'?materialOptions:key==='finish'?finishOptions:key==='costCurrency'?['GBP','EUR','USD','CAD','AUD','NZD','CHF','JPY']:key==='packaging'?['unknown','spooled','refill']:null;
@@ -117,25 +116,25 @@ function renderRows(){
    else if(key==='costPerRoll'){input.type='number';input.min='0';input.max='100000';input.step='0.01';input.placeholder='Unknown'}
    else if(key==='date')input.type='date';
    else {input.type='text';input.maxLength=key==='notes'?500:key==='product'?100:key==='hex'?7:80;if(key==='hex'){input.pattern='#[A-Fa-f0-9]{6}';input.placeholder='#RRGGBB'}}
-   input.required=!['spools','weightGrams','notes','costPerRoll','costCurrency','order','retailer'].includes(key);input.value=row.spool[key]??'';input.disabled=!row.selected;
-   input.addEventListener('input',()=>{row.spool[key]=['spools','weightGrams','costPerRoll'].includes(key)?input.value===''?null:Number(input.value):input.value;row.duplicate=FilamentImport.duplicates(row.spool,library.items.concat(rows.filter(other=>other!==row).map(other=>other.spool))).length>0;duplicate.hidden=!row.duplicate;duplicate.textContent='Possible duplicate — select only if this is additional stock.';if(key==='hex')row.spool.hexMode='manual';if(['brand','product','material','finish','colour','hex'].includes(key))updateColour();changed()});
+   input.required=row.selected&&!['spools','weightGrams','notes','costPerRoll','costCurrency','order','retailer'].includes(key);input.value=row.spool[key]??'';
+   input.addEventListener('input',()=>{row.spool[key]=['spools','weightGrams','costPerRoll'].includes(key)?input.value===''?null:Number(input.value):input.value;row.duplicate=FilamentImport.duplicates(row.spool,library.items.concat(rows.filter(other=>other!==row).map(other=>other.spool))).length>0;duplicate.hidden=!row.duplicate;duplicate.textContent='Possible duplicate — select only if this is additional stock.';if(key==='hex')row.spool.hexMode='manual';if(['brand','product','material','finish','colour','hex'].includes(key))updateColour();onChange()});
    colourInputs.set(key,input);
 
    inputs.push(input);label.append(input);grid.append(label);
   }
-  checkbox.onchange=()=>{row.selected=checkbox.checked;for(const input of inputs)input.disabled=!row.selected;automatic.disabled=!row.selected;changed()};
+  checkbox.onchange=()=>{row.selected=checkbox.checked;for(const [key,input] of colourInputs)input.required=row.selected&&!['spools','weightGrams','notes','costPerRoll','costCurrency','order','retailer'].includes(key);onChange()};
   updateColour();entry.append(grid,colourStatus,automatic);
   const details=document.createElement('details'),summary=document.createElement('summary'),source=document.createElement('pre');
-  summary.textContent='Show source text';source.textContent=row.source||'Manually entered';details.append(summary,source);entry.append(details);list.append(entry);
- });
- get('review-status').textContent=rows.length+' candidate entr'+(rows.length===1?'y':'ies')+'. '+(rows.length?'Showing '+(reviewPage*reviewPageSize+1)+'–'+Math.min(rows.length,(reviewPage+1)*reviewPageSize)+'. ':'')+(costsOnly()?'Only selected prices will change. Unknown or uncertain matches need review.':'Correct missing or uncertain fields before adding.');
+  summary.textContent='Show source text';source.textContent=row.source||'Manually entered';details.append(summary,source);entry.append(details);return entry;
+ }
+ if(rows.length)reviewTable=ImportReview.table(list,rows,library.items,reviewPage,reviewPageSize,costsOnly(),editor,changed);get('review-status').textContent=rows.length+' candidate entr'+(rows.length===1?'y':'ies')+'. '+(rows.length?'Showing '+(reviewPage*reviewPageSize+1)+'–'+Math.min(rows.length,(reviewPage+1)*reviewPageSize)+'. ':'')+(costsOnly()?'Only selected prices will change. Unknown or uncertain matches need review.':'Correct missing or uncertain fields before adding.');
  controls();
 }
 function extract(){
  try{
   const format=get('source-format').value||'text';
   rows=(format==='csv'?FilamentCsv:FilamentImport).parse(get('source-text').value).map(row=>({...row,selected:true,spool:{...row.spool,...(format==='text'?CostImport.fromText(row.source):{}),date:row.spool.date||(costsOnly()?'':today())}}));snapshotFormat=format;
-  sourceSnapshot=get('source-text').value;reviewPage=0;markDuplicates();changed();renderRows();
+  sourceSnapshot=get('source-text').value;reviewPage=0;markDuplicates();changed();renderRows();if(rows.length){get('source-panel').open=false;get('review-heading').focus();get('review-heading').scrollIntoView({block:'start'})}
   message(rows.length?'Review your entries. Nothing has been saved.':'No clear filament product lines found. Edit the text or add a blank entry.');
  }catch(error){message(error.message)}
 }
@@ -171,12 +170,12 @@ async function readImage(){
   if(!text)throw Error('No readable text found. Try a sharper crop or paste the label text.');
   if(get('source-text').value.length+text.length>60000)throw Error('Too much text. Crop to the product details or use a smaller batch.');
   get('source-text').value=[get('source-text').value.trim(),text].filter(Boolean).join('\n\n');changed();
-  get('ocr-status').textContent='Text added below. Correct any recognition mistakes, then choose Find filament entries.';
+  extract();get('ocr-status').textContent='Image read. Review the detected entries below; nothing is saved yet.';
  }catch(error){if(token===runId)get('ocr-status').textContent=error.message||'Could not read this image. Try a screenshot or paste the text.'}
  finally{clearTimeout(timeout);if(bitmap)bitmap.close();if(currentWorker)await currentWorker.terminate().catch(()=>{});if(token===runId){worker=null;reading=false;controls()}}
 }
 async function save(event){
- event.preventDefault();if(saving||get('save-import').disabled||(!costsOnly()&&!get('review-form').reportValidity()))return;
+ event.preventDefault();if(saving||get('save-import').disabled||(!costsOnly()&&reviewTable&&!reviewTable.validate()))return;
  saving=true;controls();
  try{
   const costMode=costsOnly(),selected=costMode?CostImport.changes(rows,library.items):rows.filter(row=>row.selected).map(row=>({...row.spool}));
@@ -195,7 +194,7 @@ async function save(event){
   else if(Number.isInteger(error.entryIndex)&&error.entryIndex>=0&&error.entryIndex<rows.filter(row=>row.selected).length){
    const row=rows.filter(row=>row.selected)[error.entryIndex],index=rows.indexOf(row);
    reviewPage=Math.floor(index/reviewPageSize);saving=false;changed();renderRows();
-   message('Entry '+(index+1)+': '+error.message+' Nothing was saved.');get('review-heading').focus();get('review-heading').scrollIntoView({block:'start'});get('review-form').reportValidity();
+   message('Entry '+(index+1)+': '+error.message+' Nothing was saved.');get('review-heading').focus();get('review-heading').scrollIntoView({block:'start'});reviewTable?.reveal(index);reviewTable?.validate();
   }
   else {message(error.message);if(error.status===409){pendingSave=null;saving=false;await refreshAccount()}}
  }finally{saving=false;controls()}
@@ -220,7 +219,7 @@ get('source-csv').onchange=async()=>{
  finally{if(token===runId){reading=false;controls();}}
 };
 get('source-format').onchange=changed;get('source-text').oninput=changed;get('read-image').onclick=readImage;get('cancel-read').onclick=()=>cancelRead();
-get('import-mode').onchange=()=>{rows=[];reviewPage=0;changed();renderRows();message('Mode changed. Choose Find filament entries to review this source again. Nothing was saved.')};
+get('import-mode').onchange=()=>{if(!library||saving||reading)return;for(const row of rows)row.selected=true;reviewPage=0;markDuplicates();changed();renderRows();message('Import action changed. Review the selections again. Your extracted details are kept; nothing was saved.')};
 get('extract').onclick=extract;get('clear-import').onclick=clearDraft;
 get('add-blank').onclick=()=>{
  if(rows.length>=FilamentCsv.maxEntries){message('Use at most 500 entries per batch.');return}
@@ -234,6 +233,15 @@ function turnReviewPage(page){
 for(const suffix of ['','-bottom']){get('review-prev'+suffix).onclick=()=>turnReviewPage(reviewPage-1);get('review-next'+suffix).onclick=()=>turnReviewPage(reviewPage+1)}
 get('review-page').onchange=()=>turnReviewPage(Number(get('review-page').value));
 get('approve-import').onchange=controls;get('review-form').onsubmit=save;
+get('select-new').onclick=()=>{if(saving||reading||!library)return;for(const row of rows)row.selected=ImportReview.inspect(row,rows,library.items,false).kind==='new';changed();renderRows()};
+get('select-none').onclick=()=>{if(saving||reading)return;for(const row of rows)row.selected=false;changed();renderRows()};
+for(const button of document.querySelectorAll('[data-source]'))button.onclick=()=>{
+ if(saving||reading)return;
+ const source=button.dataset.source;
+ for(const option of document.querySelectorAll('[data-source]'))option.setAttribute('aria-pressed',String(option===button));
+ for(const name of ['gmail','csv','image'])get(name+'-panel').hidden=source!==name;
+ get('gmail-panel').open=source==='gmail';get('source-text-panel').open=source==='text';
+};
 window.addEventListener('focus',refreshAccount);
 window.addEventListener('pagehide',()=>{cancelRead('');releaseImage()});
 refreshAccount();

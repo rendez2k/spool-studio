@@ -68,7 +68,7 @@
   tokenClient=window.google.accounts.oauth2.initTokenClient({client_id:config.clientId,scope,include_granted_scopes:false,callback:value=>{
    if(!valid(current))return;clearTimeout(consentTimer);busy=false;
    if(value.error||!value.access_token||!window.google.accounts.oauth2.hasGrantedAllScopes(value,scope)){status('Read-only Gmail access was not granted. No messages were loaded.');controls();return}
-   token=value.access_token;expires=Date.now()+Math.min(Number(value.expires_in)||0,3600)*1000;status('Connected for this page session. Search, select orders, then copy their text for review.');controls();
+   token=value.access_token;expires=Date.now()+Math.min(Number(value.expires_in)||0,3600)*1000;status('Connected. Find orders, choose the emails you want, then review their detected filament.');controls();
   },error_callback:()=>{if(valid(current)){clear();status('Google sign-in was closed or blocked. Try again when ready.')}}});
   tokenClient.requestAccessToken({prompt:'consent'});
  };
@@ -82,9 +82,9 @@
     if(!/^[a-f0-9]+$/i.test(message.id))continue;
     const result=await googleRequest('messages/'+message.id+'?format=metadata&metadataHeaders=Subject&metadataHeaders=From&metadataHeaders=Date',current);
     const headers=result.payload?.headers||[],header=name=>headers.find(header=>header.name.toLowerCase()===name)?.value||'';
-    const label=document.createElement('label'),checkbox=document.createElement('input'),title=document.createElement('span');checkbox.type='checkbox';checkbox.value=message.id;checkbox.onchange=controls;title.textContent=[header('subject')||'No subject',header('from'),header('date')].join(' · ');label.append(checkbox,title);node('gmail-results').append(label);controls();
+    const label=document.createElement('label'),checkbox=document.createElement('input'),title=document.createElement('span'),sender=document.createElement('span'),date=document.createElement('span');checkbox.type='checkbox';checkbox.value=message.id;checkbox.onchange=controls;title.className='gmail-subject';sender.className='gmail-sender';date.className='gmail-date';title.textContent=header('subject')||'No subject';sender.textContent=header('from');const received=new Date(header('date'));date.textContent=Number.isNaN(received.getTime())?header('date'):received.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});label.append(checkbox,title,sender,date);node('gmail-results').append(label);controls();
    }
-   status(node('gmail-results').children.length?'Select up to 10 order emails. Pick one confirmation per order, not a receipt as well. Bodies load only when you choose Copy selected order text.'+(listing.nextPageToken?' More matches exist: narrow by shop or date to find older orders.':''):'No matching emails. Try another brand or date, or choose All matching emails if the shop uses a different subject.');
+   status(node('gmail-results').children.length?'Select up to 10 order emails. Pick one confirmation per order, not a receipt as well. Bodies load only when you choose Review selected orders.'+(listing.nextPageToken?' More matches exist: narrow by shop or date to find older orders.':''):'No matching emails. Try another brand or date, or choose All matching emails if the shop uses a different subject.');
   }catch(error){if(valid(current))status(error.message)}finally{if(valid(current)){busy=false;controls()}}
  };
  node('gmail-read').onclick=async()=>{
@@ -98,7 +98,7 @@
    const parts=[];for(const id of selected){const result=await googleRequest('messages/'+id+'?format=full',current);parts.push(SpoolGmail.text(result.payload,SpoolGmailHtml.text));if(parts.join('\n\n').length>60000)throw Error('Selected emails exceed 60000 characters. Select fewer orders.')}
    if(!valid(current))return;
    if(saving||reading||node('source-text').value||rows.length)throw Error('Your import draft changed. Clear it before copying email text.');
-   node('source-format').value='text';node('source-text').value=parts.join('\n\n');changed();node('source-text').focus();status('Order text copied below. Remove addresses and unrelated lines, then choose Find filament entries. Nothing has been saved.');
+   node('source-format').value='text';node('source-text').value=parts.join('\n\n');changed();extract();if(!rows.length){node('source-panel').open=true;node('source-text-panel').open=true}status(rows.length?'Orders read. Review the detected filament and library matches below. Nothing has been saved.':'No clear product lines found. Open the source text to correct it, or try a screenshot. Nothing has been saved.');
   }catch(error){if(valid(current))status(error.message)}finally{if(valid(current)){busy=false;controls()}}
  };
  node('gmail-cancel').onclick=()=>{sequence++;controller?.abort();clearTimeout(consentTimer);busy=false;controls();status('Cancelled. No import was saved.')};

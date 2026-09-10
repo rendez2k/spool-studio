@@ -10,7 +10,7 @@ function harness(){
  const node=id=>{if(!elements.has(id))elements.set(id,element());return elements.get(id)};
  node('gmail-connect').hidden=true;
  const oauth2={initTokenClient(config){clientConfig=config;return {requestAccessToken(){requests++}}},hasGrantedAllScopes(){return scopeGranted},revoke(token,callback){assert.equal(token,'test-token');callback({successful:true})}};
- const context=vm.createContext({library:{accountKey:'user_alice'},saving:false,reading:false,rows:[],api:async()=>({accountKey:currentAccount}),changed(){},loseAccount(){context.library=null;context.window.GmailImport.clear()},SpoolGmail:core,SpoolGmailHtml:{text:()=>{throw Error("Unexpected HTML body")}},
+ const context=vm.createContext({library:{accountKey:'user_alice'},saving:false,reading:false,rows:[],api:async()=>({accountKey:currentAccount}),changed(){},extract(){context.rows=[{source:node('source-text').value}];node('source-panel').open=false},loseAccount(){context.library=null;context.window.GmailImport.clear()},SpoolGmail:core,SpoolGmailHtml:{text:()=>{throw Error("Unexpected HTML body")}},
   window:{google:{accounts:{oauth2}},addEventListener(name,callback){events[name]=callback}},document:{getElementById:node,createElement:element,head:element()},Date,Uint8Array,TextDecoder,AbortController,AbortSignal,setTimeout,clearTimeout,
   fetch:async(url,options)=>{
    calls.push({url,options});
@@ -24,7 +24,7 @@ function harness(){
  vm.runInContext(readFileSync(new URL('../out/gmail-import.js',import.meta.url),'utf8'),context);
  return {node,context,calls,events,setMessageCount(value){messageCount=value},get requests(){return requests},delaySetup(){slowSetup=true},finishSetup(){slowSetup=false;resolveSetup?.()},delayGoogle(){context.window.google=undefined},finishGoogle(){context.window.google={accounts:{oauth2}};context.document.head.children.at(-1).onload()},consent(){clientConfig.callback({access_token:'test-token',expires_in:3600})},get config(){return clientConfig},setEnabled(value){enabled=value},setGranted(value){scopeGranted=value},setAccount(value){currentAccount=value},slow(){slow=true},finishSlow(){resolveSlow?.()}};
 }
-test('Gmail is opt-in, requests read-only access and copies only selected plain text without a save',async()=>{
+test('Gmail is opt-in, requests read-only access and reviews only selected plain text without a save',async()=>{
  const app=harness();assert.equal(app.calls.length,0);
  await app.node('gmail-prepare').onclick();assert.equal(app.config.scope,'https://www.googleapis.com/auth/gmail.readonly');assert.equal(app.config.include_granted_scopes,false);
  app.node('gmail-connect').onclick();assert.equal(app.calls.length,1);app.consent();
@@ -32,7 +32,7 @@ test('Gmail is opt-in, requests read-only access and copies only selected plain 
  const query=new URL(app.calls.find(call=>call.url.includes('messages?')).url).searchParams.get('q');
  assert.match(query,/subject:confirmed/);assert.match(query,/-subject:shipment/);assert.match(query,/-subject:setup/);
  app.node('gmail-results').children[0].children[0].checked=true;
- await app.node('gmail-read').onclick();assert.match(app.node('source-text').value,/SUNLU PLA Orange/);assert.equal(app.context.rows.length,0);
+ await app.node('gmail-read').onclick();assert.match(app.node('source-text').value,/SUNLU PLA Orange/);assert.equal(app.context.rows.length,1);assert.equal(app.node('source-panel').open,false);assert.match(app.node('gmail-status').textContent,/Review the detected/);
  assert(!app.calls.some(call=>call.options.method==='POST'));app.node('gmail-disconnect').onclick();assert.match(app.node('gmail-status').textContent,/revoked/);
  assert.match(app.node('source-text').value,/SUNLU/);assert.equal(app.node('gmail-results').children.length,0);
 });
