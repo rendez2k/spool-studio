@@ -1,0 +1,11 @@
+# Automatic colour catalogue
+
+`out/colour-catalog.js` holds 69 factual manufacturer hex/name pairs for Bambu Lab PLA Basic, PLA Matte and PETG HF, their primary source URLs and verification date. See `/colour-sources.html`. Extend only from manufacturer-published tables with an exact range and shade; do not sample marketing photographs or relabel community estimates as official.
+
+`libraryView` resolves the effective colour for every signed-in account without mutating the stored inventory, revision, counts or reel IDs. Matching, shelf ordering, fresh label/export data and new NFC selections consume that same effective hex. Already prepared NFC batches and physical tags remain unchanged until the user prepares/writes them again.
+
+Explicit `hexMode: manual` always wins. `auto` opts into exact lookup. For records predating provenance, only missing hex, already matching official hex or a known app-generated legacy estimate (identity plus exact old hex) is automatically eligible. Legacy entries marked Added manually are excluded from the estimate correction. Other old saved values remain estimated/unverified, not falsely labelled manufacturer-sourced. An old custom value identical to a legacy default cannot be distinguished historically; the original stored hex is retained and exposed as `savedHex` for restoration in the editor.
+
+New forms start automatic and offer exact shade suggestions. Colour-picker/hex input switches to manual. Product-link/barcode drafts share the form integration. CSV blank hex and text estimates request automatic lookup; explicitly supplied CSV/text hex remains manual. Import review can change identity and switch to automatic before saving. API validates modes and derives source labels itself; client-supplied URLs/provenance are not trusted. Older clients changing a hex on edit produce a manual override.
+
+No runtime scraping, external requests, private data embedded in the catalogue, or database migration. Raw account export intentionally retains the saved source data; normal library views expose effective colours and provenance. The public catalogue's legacy map is old app swatch defaults only, with no account IDs, purchase records, quantities or dates.

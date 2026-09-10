@@ -1,6 +1,7 @@
 (function(root){
  'use strict';
  const costing=typeof module==='object'&&module.exports?require('./cost-core.js'):root.SpoolCost;
+ const catalogue=typeof module==='object'&&module.exports?require('./colour-catalog.js'):root.FilamentColours;
  const materials=/\bPLA\s*\+|\b(PLA\s+Plus|PETG|PLA|ABS|ASA|TPU|PA|PC|PVA|HIPS)\b/i;
  const brands=/\b(Bambu(?:\s+Lab)?|SUNLU|ELEGOO|eSUN|Polymaker|Prusament|Overture|Anycubic|Creality|Eryone|JAYO|AMOLEN)\b/i;
  const finishes=/\b(matte|matt|basic|standard|silk|marble|sparkle|wood|glow|satin|metallic)\b/i;
@@ -29,7 +30,7 @@
    const brand=source.match(brands)?.[0]||'';
    const named=source.match(/(?:colou?r|shade)\s*:\s*([^\n;|]{1,80})/i)?.[1]?.trim();
    const detected=Object.keys(colours).filter(colour=>new RegExp('\\b'+colour+'\\b','i').test(source));
-   const colour=named||(detected.length===1?detected[0][0].toUpperCase()+detected[0].slice(1):'');
+   let colour=named||(detected.length===1?detected[0][0].toUpperCase()+detected[0].slice(1):'');
    const hex=source.match(/#[a-f0-9]{6}\b/i)?.[0]||colours[Object.keys(colours).find(value=>new RegExp('\\b'+value+'\\b','i').test(colour))]||'';
    const quantity=source.match(/\b(?:qty|quantity)\s*[:x]?\s*(\d{1,3})\b/i);
    const pack=source.match(/\b(\d{1,3})\s*[x×]\s*(\d+(?:\.\d+)?)\s*(kg|g)\b/i);
@@ -41,15 +42,27 @@
    const weightGrams=weight&&(!bundle||pack)?Math.round(Number(weight[0])*(weight[1].toLowerCase()==='kg'?1000:1)):null;
    const packaging=/\b(refill|without (?:a )?spool|no spool)\b/i.test(source)?'refill':/\b(with (?:a )?spool|on (?:a )?spool|spooled|spool included)\b/i.test(source)?'spooled':'unknown';
    const date=source.match(/\b\d{4}-\d{2}-\d{2}\b/)?.[0]||'';
-   const profile=[foundMaterial,finish==='unknown'?'':finish==='standard'?'Basic':finish[0].toUpperCase()+finish.slice(1),source.match(/\b\d{2}A\b/i)?.[0]||''].filter(Boolean).join(' ');
+   let profile=[foundMaterial,finish==='unknown'?'':finish==='standard'?'Basic':finish[0].toUpperCase()+finish.slice(1),source.match(/\b\d{2}A\b/i)?.[0]||''].filter(Boolean).join(' ');
+   const finishWords=new Set((source.match(/\b(?:matte|matt|basic|standard|silk|marble|sparkle|wood|glow|satin|metallic)\b/gi)||[]).map(value=>({matt:'matte',basic:'standard'})[value.toLowerCase()]||value.toLowerCase()));
+   const uncertainRange=/^bambu(?: lab)?$/i.test(brand)&&(/\b(?:gradient|silk|sparkle|marble|metal|metallic|wood|glow|aero|translucent|transparent|tough|lite|pro|plus|hf|cf|gf|pure|support|rapid|high speed|hs)\b/i.test(source)||finishWords.size>1);
+   if(uncertainRange)profile+=' · verify range';
+   const identity={brand,product:profile,material:foundMaterial,finish};
+   if(!named){
+    const text=' '+normal(source).replace(/\bgrey\b/g,'gray')+' ';
+    const matches=catalogue.shades(identity).filter(shade=>text.includes(' '+normal(shade)+' '));
+    const exact=matches.filter(shade=>!matches.some(other=>other!==shade&&normal(other).includes(normal(shade))));
+    if(exact.length===1)colour=exact[0];
+   }
    const warnings=['Text recognition can be wrong. Check each field before adding.'];
+   if(uncertainRange)warnings.push('Product range has extra or conflicting qualifiers. Confirm the exact range before manufacturer colour lookup.');
    if(!named&&detected.length>1)warnings.push('Multiple colours detected: split this bundle into individual shades yourself.');
-   if(!source.match(/#[a-f0-9]{6}\b/i))warnings.push(hex?'Swatch is a broad colour estimate, not a manufacturer shade.':'Colour and swatch need entering.');
+   const resolved=catalogue.resolve({...identity,colour,hex,hexMode:source.match(/#[a-f0-9]{6}\b/i)?'manual':'auto'});
+   if(resolved.colourSource.kind==='estimated')warnings.push(hex?'Swatch is a broad colour estimate, not a manufacturer shade.':'Colour and swatch need entering.');
    if(spools===null)warnings.push('Roll count is not reliably stated; blank stays unknown.');
    if(!date)warnings.push('No purchase date found; today is used as the added date.');
    const costs=costing.fromText(source);
    if(costs.costPerRoll===undefined)warnings.push('Cost not inferred from totals or bundle prices. Enter cost per roll and currency if known.');
-   return {source,warnings,spool:{brand:/^bambu$/i.test(brand)?'Bambu Lab':brand,product:profile,material:foundMaterial,finish,colour,hex,spools,weightGrams,packaging,date,notes:'',...costs}};
+   return {source,warnings,spool:{...resolved,brand:/^bambu$/i.test(brand)?'Bambu Lab':brand,spools,weightGrams,packaging,date,notes:'',...costs}};
   });
  }
  function duplicates(spool,inventory){

@@ -6,7 +6,7 @@ let reviewPage=0;
 const reviewPageSize=20;
 const materialOptions=['PLA','PLA+','PETG','ABS','ASA','TPU','PA','PC','PVA','HIPS','Other'];
 const finishOptions=['unknown','standard','matte','silk','marble','sparkle','wood','glow','satin','metal'];
-const fields=[['brand','Brand'],['product','Product / type'],['material','Material'],['finish','Finish'],['colour','Colour name'],['hex','Colour hex (estimate unless printed)'],['spools','Number of rolls'],['weightGrams','Grams per roll'],['costPerRoll','Cost per roll (not line total)'],['costCurrency','Cost currency (GBP, EUR, USD…)'],['packaging','Packaging'],['date','Purchase / added date'],['notes','Notes / uncertainties']];
+const fields=[['brand','Brand'],['product','Product / type'],['material','Material'],['finish','Finish'],['colour','Colour name'],['hex','Colour hex'],['spools','Number of rolls'],['weightGrams','Grams per roll'],['costPerRoll','Cost per roll (not line total)'],['costCurrency','Cost currency (GBP, EUR, USD…)'],['packaging','Packaging'],['date','Purchase / added date'],['notes','Notes / uncertainties']];
 function today(){const date=new Date();return [date.getFullYear(),String(date.getMonth()+1).padStart(2,'0'),String(date.getDate()).padStart(2,'0')].join('-')}
 function message(text){get('import-message').textContent=text}
 function changed(){get('approve-import').checked=false;pendingSave=null;controls()}
@@ -93,6 +93,16 @@ function renderRows(){
   const duplicate=document.createElement('p');duplicate.className='duplicate';duplicate.hidden=!row.duplicate;duplicate.textContent='Possible duplicate — already in your library or this batch. Starts unselected.';entry.append(duplicate);
   const warning=document.createElement('p');warning.className='warning';warning.textContent=row.warnings.join(' ');entry.append(warning);
   const grid=document.createElement('div');grid.className='fields';const inputs=[];
+  const colourStatus=document.createElement('p');colourStatus.className='meta';
+  const automatic=document.createElement('button');automatic.type='button';automatic.textContent='Use automatic colour';
+  const colourInputs=new Map();
+  function updateColour(){
+   Object.assign(row.spool,FilamentColours.resolve(row.spool));
+   const hexInput=colourInputs.get('hex');if(hexInput)hexInput.value=row.spool.hex;
+   colourStatus.textContent=FilamentColours.source(row.spool).label+' · '+(row.spool.hex||'Hex needed');
+   automatic.hidden=row.spool.hexMode==='auto';automatic.disabled=!row.selected;
+  }
+  automatic.onclick=()=>{row.spool.hexMode='auto';updateColour();changed()};
   for(const [key,labelText] of fields){
    const label=document.createElement('label');label.textContent=labelText;
    const options=key==='material'?materialOptions:key==='finish'?finishOptions:key==='costCurrency'?['GBP','EUR','USD','CAD','AUD','NZD','CHF','JPY']:key==='packaging'?['unknown','spooled','refill']:null;
@@ -103,11 +113,13 @@ function renderRows(){
    else if(key==='date')input.type='date';
    else {input.type='text';input.maxLength=key==='notes'?500:key==='product'?100:key==='hex'?7:80;if(key==='hex'){input.pattern='#[A-Fa-f0-9]{6}';input.placeholder='#RRGGBB'}}
    input.required=!['spools','weightGrams','notes','costPerRoll','costCurrency'].includes(key);input.value=row.spool[key]??'';input.disabled=!row.selected;
-   input.addEventListener('input',()=>{row.spool[key]=['spools','weightGrams','costPerRoll'].includes(key)?input.value===''?null:Number(input.value):input.value;row.duplicate=FilamentImport.duplicates(row.spool,library.items.concat(rows.filter(other=>other!==row).map(other=>other.spool))).length>0;duplicate.hidden=!row.duplicate;duplicate.textContent='Possible duplicate — select only if this is additional stock.';changed()});
+   input.addEventListener('input',()=>{row.spool[key]=['spools','weightGrams','costPerRoll'].includes(key)?input.value===''?null:Number(input.value):input.value;row.duplicate=FilamentImport.duplicates(row.spool,library.items.concat(rows.filter(other=>other!==row).map(other=>other.spool))).length>0;duplicate.hidden=!row.duplicate;duplicate.textContent='Possible duplicate — select only if this is additional stock.';if(key==='hex')row.spool.hexMode='manual';if(['brand','product','material','finish','colour','hex'].includes(key))updateColour();changed()});
+   colourInputs.set(key,input);
+
    inputs.push(input);label.append(input);grid.append(label);
   }
-  checkbox.onchange=()=>{row.selected=checkbox.checked;for(const input of inputs)input.disabled=!row.selected;changed()};
-  entry.append(grid);
+  checkbox.onchange=()=>{row.selected=checkbox.checked;for(const input of inputs)input.disabled=!row.selected;automatic.disabled=!row.selected;changed()};
+  updateColour();entry.append(grid,colourStatus,automatic);
   const details=document.createElement('details'),summary=document.createElement('summary'),source=document.createElement('pre');
   summary.textContent='Show source text';source.textContent=row.source||'Manually entered';details.append(summary,source);entry.append(details);list.append(entry);
  });

@@ -83,6 +83,7 @@ function fillSpoolForm(row){
  $('spool-packaging').value=row?packaging(row):'spooled';$('spool-error').textContent='';
  $('save-spool').textContent=row?'Save changes':'Add to library';
  window.SpoolAssist?.reset(row);
+ window.ColourForm?.reset(row);
 }
 function openSpoolForm(id){
  if(libraryBusy||dataset.status!=='complete')return;
@@ -101,6 +102,7 @@ $('spool-hex').oninput=()=>{if(/^#[\da-f]{6}$/i.test($('spool-hex').value))$('sp
 $('spool-form').onsubmit=async event=>{
  event.preventDefault();if(window.SpoolAssist?.busy()||!$('spool-form').reportValidity())return;
  const spool={};for(const key of ['brand','product','material','finish','colour','hex','packaging','date','notes'])spool[key]=$('spool-'+key).value;
+ if(window.ColourForm)spool.hexMode=window.ColourForm.mode();
  if(window.SpoolAssist){try{Object.assign(spool,window.SpoolAssist.fields())}catch(error){$('spool-error').textContent=error.message;return}}
  spool.spools=$('spool-count').value===''?null:Number($('spool-count').value);
  spool.weightGrams=$('spool-weight').value===''?null:Number($('spool-weight').value);

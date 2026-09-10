@@ -44,6 +44,7 @@
    const profile=SpoolCatalog.profiles.find(profile=>profile.product===value);
    if(profile){node('spool-material').value=profile.material;node('spool-finish').value=profile.finish}
   }
+  window.ColourForm?.update();
  };
  function useDraft(draft){
   if(libraryBusy||loading||scanning)return;
@@ -51,6 +52,7 @@
   node('spool-sample').value=/^#[a-f\d]{6}$/i.test(draft.hex||'')?draft.hex:'#FFFFFF';node('spool-weight').value=draft.weightGrams??'';
   source=draft.sourceUrl||'';node('assist-code').value=draft.barcode||'';showSource();syncChoice('brand');syncChoice('product');
   node('assist-results').replaceChildren();message('Draft filled. Check the exact colour, finish, packaging, grams per roll and how many rolls you own before saving.');
+  window.ColourForm?.reset(draft);
  }
  function addDraftButton(label,draft,account){const button=document.createElement('button');button.type='button';button.textContent=label;button.onclick=()=>{if(account!==dataset.accountKey){stop();node('assist-results').replaceChildren();return}useDraft(draft)};node('assist-results').append(button)}
  node('assist-lookup').onclick=async()=>{

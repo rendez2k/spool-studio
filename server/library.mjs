@@ -1,6 +1,7 @@
 import { boundedJson } from "./api.mjs";
 import SpoolCatalog from "../out/spool-catalog.js";
 import SpoolCost from '../out/cost-core.js';
+import FilamentColours from '../out/colour-catalog.js';
 import {addReels, initialiseReels, updateReel, updateItemStatus, tokenHash} from './reels.mjs';
 import {linkSpoolman} from './spoolman-mapping.mjs';
 
@@ -15,6 +16,7 @@ function shortText(value, limit, name, required = true) {
 
 export function validateSpool(input) {
   if (!input || typeof input !== "object") throw Error("Enter the spool details.");
+  if(input.hexMode==='auto')input=FilamentColours.resolve(input);
   const brand = shortText(input.brand, 80, "brand");
   const product = shortText(input.product, 100, "filament type");
   const colour = shortText(input.colour, 80, "colour name");
@@ -26,6 +28,10 @@ export function validateSpool(input) {
   if (input.weightGrams !== null && (!Number.isInteger(input.weightGrams) || input.weightGrams < 1 || input.weightGrams > 10000)) throw Error("Enter 1–10000 grams per roll, or leave it blank.");
   if (typeof input.date !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(input.date) || !Number.isFinite(Date.parse(input.date)) || new Date(input.date).toISOString().slice(0, 10) !== input.date) throw Error("Choose a valid date.");
   const optional = SpoolCost.fields(input);
+  if(input.hexMode!==undefined){
+    if(!['auto','manual'].includes(input.hexMode))throw Error('Choose automatic or custom colour.');
+    optional.hexMode=input.hexMode;
+  }
   if (input.barcode !== undefined) optional.barcode = SpoolCatalog.barcode(input.barcode);
   if (input.sourceUrl !== undefined) optional.sourceUrl = SpoolCatalog.sourceUrl(input.sourceUrl);
   return { brand, product, colour, notes, material: input.material, finish: input.finish, packaging: input.packaging, hex: input.hex.toUpperCase(), spools: input.spools, weightGrams: input.weightGrams, date: input.date, ...optional };
@@ -47,7 +53,7 @@ export async function getLibrary(database, userId) {
 
 export function libraryView(row, userId) {
   const data = JSON.parse(row.payload);
-  return { status: "complete", items: data.items, reels: data.reels ?? null, bridge: { enabled: Boolean(data.bridgeHash), lastSync: data.bridgeLastSync || null }, revision: row.revision, accountKey: userId, coverage: "Your private, account-synced filament inventory.", notice: "", updatedAt: row.updated_at };
+  return { status: "complete", items: data.items.map(FilamentColours.resolve), reels: data.reels ?? null, bridge: { enabled: Boolean(data.bridgeHash), lastSync: data.bridgeLastSync || null }, revision: row.revision, accountKey: userId, coverage: "Your private, account-synced filament inventory.", notice: "", updatedAt: row.updated_at };
 }
 
 export async function handleLibrary(request, env) {
@@ -117,6 +123,10 @@ export async function handleLibrary(request, env) {
             const existing = data.reels.filter(reel => reel.itemId === item.id).length;
             if (existing && (fields.spools === null || fields.spools < existing)) throw Error('This entry has permanent spool IDs. Mark individual reels used instead of reducing its original roll count.');
             if (fields.spools !== null && fields.spools > existing) addReels(data, {...item, used: false}, fields.spools - existing);
+          }
+          if(input.spool.hexMode===undefined){
+            const previous=FilamentColours.resolve(item);
+            fields.hexMode=fields.hex!==previous.hex?'manual':previous.hexMode||'manual';
           }
           Object.assign(item, fields);
           if (data.reels) updateItemStatus(data, item.id);

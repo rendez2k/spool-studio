@@ -19,7 +19,7 @@ async function harness(){
  const get=id=>{if(!elements.has(id))elements.set(id,node());return elements.get(id)};
  const window={addEventListener(name,handler){events[name]=handler}};
  class TestURL extends URL{static createObjectURL(){return 'blob:test'}static revokeObjectURL(){}}
- const context=vm.createContext({window,document:{getElementById:get,createElement:node,head:node()},FilamentImport:require('../out/import-parser.js'),FilamentCsv:require('../out/import-csv.js'),URL:TestURL,Blob,AbortSignal,TextEncoder,TextDecoder,crypto,setTimeout,clearTimeout,createImageBitmap:async()=>({width:800,height:400,close(){}}),
+ const context=vm.createContext({window,document:{getElementById:get,createElement:node,head:node()},FilamentImport:require('../out/import-parser.js'),FilamentCsv:require('../out/import-csv.js'),FilamentColours:require('../out/colour-catalog.js'),URL:TestURL,Blob,AbortSignal,TextEncoder,TextDecoder,crypto,setTimeout,clearTimeout,createImageBitmap:async()=>({width:800,height:400,close(){}}),
   fetch:async(url,options)=>{
    assert.equal(url,'/api/library');
    if(options.body)posts.push(JSON.parse(options.body));

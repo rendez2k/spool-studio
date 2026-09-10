@@ -1,5 +1,13 @@
 [
   {
+    "version": "1.2.0",
+    "date": "2026-09-10",
+    "title": "Manufacturer colour matching",
+    "changes": [
+      "Automatic manufacturer hex codes for 69 Bambu PLA Basic, PLA Matte and PETG HF shades. Existing known estimates refresh without discarding saved colours; custom overrides stay protected. Add and import forms fill verified colours and show their source."
+    ]
+  },
+  {
     "version": "1.1.1",
     "date": "2026-09-10",
     "title": "Our filament community",

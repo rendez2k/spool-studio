@@ -1,6 +1,7 @@
 (function(root){
  'use strict';
  const costing=typeof module==='object'&&module.exports?require('./cost-core.js'):root.SpoolCost;
+ const colours=typeof module==='object'&&module.exports?require('./colour-catalog.js'):root.FilamentColours;
  const columns=['brand','product','material','finish','colour','hex','spools','weightGrams','packaging','date','notes'];
  const maxEntries=500,maxCharacters=1000000,maxBytes=1000000;
  function parse(input){
@@ -42,7 +43,9 @@
    if(spool.hex&&!/^#[a-f\d]{6}$/i.test(spool.hex))throw Error('Entry '+(index+1)+': hex must be #RRGGBB or blank.');
    if(spool.date&&(!/^\d{4}-\d{2}-\d{2}$/.test(spool.date)||!Number.isFinite(Date.parse(spool.date+'T00:00:00Z'))||new Date(spool.date+'T00:00:00Z').toISOString().slice(0,10)!==spool.date))throw Error('Entry '+(index+1)+': use a valid YYYY-MM-DD date or leave it blank.');
    const warnings=['Check the source email: CSV contents are not verified purchase or stock records.'];
-   if(!spool.hex)warnings.push('Colour hex was not supplied; enter and review a swatch before saving.');
+   spool.hexMode=spool.hex?'manual':'auto';
+   Object.assign(spool,colours.resolve(spool));
+   if(!spool.hex)warnings.push('No verified exact shade found; enter and review a swatch before saving.');
    if(!spool.date)warnings.push('No purchase date supplied; today is used as the added date.');
    return {source:header.map(key=>key+': '+(record[header.indexOf(key)]||'')).join('\n'),spool,warnings};
   });
