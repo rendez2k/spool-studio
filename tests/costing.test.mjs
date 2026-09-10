@@ -10,7 +10,7 @@ const spool={brand:'Test',product:'PLA Basic',material:'PLA',finish:'standard',c
 
 test('spool costs validate separately from quantities and preserve unknown versus zero',()=>{
  const html=readFileSync(new URL('../out/index.html',import.meta.url),'utf8');
- assert(html.includes("if(!combined&&!familyMode&&mode!=='shelf')cols.push('costPerRoll','costCurrency')"));
+ assert(html.includes("if(!combined&&!familyMode&&mode!=='shelf'&&mode!=='wheel')cols.push('costPerRoll','costCurrency')"));
  assert(html.slice(html.indexOf('<form id="spool-form"'),html.indexOf('</form></dialog>',html.indexOf('<form id="spool-form"'))).includes('Cost is for one physical'));
  for(const amount of [-1,100001,1.001,Infinity,'12'])assert.throws(()=>validateSpool({...spool,costPerRoll:amount,costCurrency:'GBP'}));
  assert.throws(()=>validateSpool({...spool,costPerRoll:12,costCurrency:''}));

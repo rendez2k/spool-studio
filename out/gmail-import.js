@@ -95,7 +95,7 @@
   const current=++sequence;busy=true;controller=new AbortController();controls();status('Reading selected order text on this device…');
   try{
    await account();if(!valid(current))return;
-   const parts=[];for(const id of selected){const result=await googleRequest('messages/'+id+'?format=full',current);parts.push(SpoolGmail.text(result.payload));if(parts.join('\n\n').length>60000)throw Error('Selected emails exceed 60000 characters. Select fewer orders.')}
+   const parts=[];for(const id of selected){const result=await googleRequest('messages/'+id+'?format=full',current);parts.push(SpoolGmail.text(result.payload,SpoolGmailHtml.text));if(parts.join('\n\n').length>60000)throw Error('Selected emails exceed 60000 characters. Select fewer orders.')}
    if(!valid(current))return;
    if(saving||reading||node('source-text').value||rows.length)throw Error('Your import draft changed. Clear it before copying email text.');
    node('source-format').value='text';node('source-text').value=parts.join('\n\n');changed();node('source-text').focus();status('Order text copied below. Remove addresses and unrelated lines, then choose Find filament entries. Nothing has been saved.');

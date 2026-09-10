@@ -8,6 +8,10 @@ const releases = validateReleases(JSON.parse(await readFile('releases.json', 'ut
 
 const types = { ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8", ".png": "image/png", ".svg": "image/svg+xml", ".jpeg": "image/jpeg", ".jpg": "image/jpeg", ".webmanifest": "application/manifest+json; charset=utf-8" };
 const assets = {};
+await mkdir('out/vendor/gmail', { recursive: true });
+await build({ entryPoints: ['browser/gmail-html.mjs'], outfile: 'out/vendor/gmail/html-text.js', bundle: true, format: 'iife', globalName: 'SpoolGmailHtml', platform: 'browser', target: 'es2022', minify: true });
+await cp('node_modules/parse5/LICENSE', 'out/vendor/gmail/parse5-LICENSE.txt');
+await cp('node_modules/entities/LICENSE', 'out/vendor/gmail/entities-LICENSE.txt');
 const barcodeDirectory = "out/vendor/barcode";
 await mkdir(barcodeDirectory, { recursive: true });
 await build({ stdin: { contents: "import { BrowserMultiFormatOneDReader } from '@zxing/browser'; import { BarcodeFormat, DecodeHintType } from '@zxing/library'; export function createReader(){ return new BrowserMultiFormatOneDReader(new Map([[DecodeHintType.POSSIBLE_FORMATS,[BarcodeFormat.EAN_8,BarcodeFormat.EAN_13,BarcodeFormat.UPC_A,BarcodeFormat.CODE_128,BarcodeFormat.CODE_39,BarcodeFormat.ITF]]])); }", resolveDir: process.cwd() }, outfile: barcodeDirectory + "/decoder.js", bundle: true, format: "iife", globalName: "SpoolBarcodeDecoder", platform: "browser", target: "es2022", minify: true });

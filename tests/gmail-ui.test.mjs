@@ -10,7 +10,7 @@ function harness(){
  const node=id=>{if(!elements.has(id))elements.set(id,element());return elements.get(id)};
  node('gmail-connect').hidden=true;
  const oauth2={initTokenClient(config){clientConfig=config;return {requestAccessToken(){requests++}}},hasGrantedAllScopes(){return scopeGranted},revoke(token,callback){assert.equal(token,'test-token');callback({successful:true})}};
- const context=vm.createContext({library:{accountKey:'user_alice'},saving:false,reading:false,rows:[],api:async()=>({accountKey:currentAccount}),changed(){},loseAccount(){context.library=null;context.window.GmailImport.clear()},SpoolGmail:core,
+ const context=vm.createContext({library:{accountKey:'user_alice'},saving:false,reading:false,rows:[],api:async()=>({accountKey:currentAccount}),changed(){},loseAccount(){context.library=null;context.window.GmailImport.clear()},SpoolGmail:core,SpoolGmailHtml:{text:()=>{throw Error("Unexpected HTML body")}},
   window:{google:{accounts:{oauth2}},addEventListener(name,callback){events[name]=callback}},document:{getElementById:node,createElement:element,head:element()},Date,Uint8Array,TextDecoder,AbortController,AbortSignal,setTimeout,clearTimeout,
   fetch:async(url,options)=>{
    calls.push({url,options});

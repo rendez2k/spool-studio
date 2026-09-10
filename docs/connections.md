@@ -62,7 +62,7 @@ References: [API setup](https://www.upcitemdb.com/wp/docs/main/development/getti
 
 ## Gmail: private test, disabled for other accounts
 
-Ordinary Google login remains identity-only. The optional importer uses a separate browser OAuth token client requesting only `gmail.readonly`, on explicit user interaction. Search shows at most 20 message headers; only 1–10 selected message bodies are subsequently requested. Only plain-text bodies are parsed. Attachments and HTML-only messages are unsupported. Tokens and original messages are not sent to the app server or stored in browser storage. Reviewed spool fields still pass through the existing consented importer.
+Ordinary Google login remains identity-only. The optional importer uses a separate browser OAuth token client requesting only `gmail.readonly`, on explicit user interaction. Search shows at most 20 message headers; only 1–10 selected message bodies are subsequently requested. Plain-text bodies are preferred. HTML-only messages fall back to bounded, on-device text extraction using a bundled HTML parser; markup is never inserted into the page, and scripts, images, tracking pixels and attachments are not loaded. Tokens and original messages are not sent to the app server or stored in browser storage. Reviewed spool fields still pass through the existing consented importer.
 
 Before enabling a test:
 
@@ -73,7 +73,7 @@ Before enabling a test:
 
 The code and synthetic tests do not establish Google approval or real-mailbox readiness. No background inbox scanning or refresh token is implemented.
 
-On 10 September 2026 the owner approved a private importer test. A separate Google project was created with Testing audience, one explicitly listed Google tester, a web client restricted to the canonical app origin, and only the Gmail read-only scope. Production function settings allow only the approved app account; the public switch remains false. Project/client/tester identifiers remain in private operator configuration, not this repository. Gmail mailbox consent and end-to-end message import still require the tester's separate interaction. Existing production Google login is unchanged.
+On 10 September 2026 the owner approved a private importer test. A separate Google project was created with Testing audience, one explicitly listed Google tester, a web client restricted to the canonical app origin, and only the Gmail read-only scope. Production function settings allow only the approved app account; the public switch remains false. Project/client/tester identifiers remain in private operator configuration, not this repository. The owner completed consent and provided a screenshot of an eSUN PLA+ review candidate after email text extraction. Duplicate detection left it unselected; no additional stock save was needed. A separate HTML-only email failed in the old plain-text reader and still needs a real-mailbox retry after the fallback update. Existing production Google login is unchanged.
 
 References: [Gmail scope classification](https://developers.google.com/workspace/gmail/api/auth/scopes), [browser token model](https://developers.google.com/identity/oauth2/web/guides/use-token-model).
 
@@ -99,4 +99,4 @@ The additive Netlify migration `002_barcode-budget` creates this table and revok
 
 Preparation is tied to both the current app account and a cancellable generation. Late configuration replies or Google-script loads cannot restore a connection after cancellation, navigation or an account switch. Rechecking a disabled test gate clears previous preparation. A connection can only start for the account whose setup was checked; message searches and reads also recheck the authenticated app account. Disconnecting or leaving clears preparation as well as the in-memory token. Old consent and revocation callbacks cannot update a newer session.
 
-Automated fixtures cover these paths without a real mailbox or Google token. They do not replace the consenting tester's order-body copy check or Google's public-app verification. Public Gmail access remains disabled.
+Automated fixtures cover these paths without a real mailbox or Google token. The owner has supplied evidence of a real plain-text import reaching review; fixtures do not replace the HTML-only retry or Google's public-app verification. Public Gmail access remains disabled.

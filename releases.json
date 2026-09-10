@@ -1,5 +1,14 @@
 [
   {
+    "version": "1.5.0",
+    "date": "2026-09-10",
+    "title": "Your library, in living colour",
+    "changes": [
+      "Explore your available filament in an animated Colour wheel. Slice sizes represent roll counts, neutrals have their own inner ring, and selecting a shade reveals its filament and colour source. Includes pause, keyboard navigation and reduced-motion support.",
+      "Gmail now reads HTML-only order emails as plain text on your device, without displaying email markup or loading tracking images. Plain-text versions are preferred and attachments stay excluded."
+    ]
+  },
+  {
     "version": "1.4.3",
     "date": "2026-09-10",
     "title": "Clearer Gmail order selection",

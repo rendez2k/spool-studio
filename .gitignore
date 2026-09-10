@@ -2,6 +2,7 @@ dist/
 node_modules/
 out/vendor/ocr/
 out/vendor/barcode/
+out/vendor/gmail/
 .local/
 .openai/hosting.json
 .env

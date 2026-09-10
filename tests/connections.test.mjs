@@ -36,11 +36,11 @@ test('Gmail configuration is disabled by default and separately gated by account
  assert.equal(gmailConfig('user_bob',{clientId,publicEnabled:true}).enabled,true);
  assert.equal(gmailConfig('user_bob',{clientId:'123456-testXappsXgoogleusercontentXcom',publicEnabled:true}).enabled,false);
 });
-test('Gmail reader decodes only plain text, skips attachments and rejects excess input',()=>{
+test('Gmail reader prefers plain text, skips attachments and rejects excess input',()=>{
  const plain=value=>({mimeType:'text/plain',body:{data:Buffer.from(value).toString('base64url')}});
  assert.equal(gmail.text({parts:[{mimeType:'text/html',body:{data:Buffer.from('<img src="https://tracker">').toString('base64url')}},plain('SUNLU PLA\nQuantity: 2'),{...plain('secret attachment'),filename:'file.txt'}]}),'SUNLU PLA\nQuantity: 2');
  assert.equal(gmail.text(plain('Blå PLA')),'Blå PLA');
- assert.throws(()=>gmail.text({mimeType:'text/html'}),/No plain-text/);
+ assert.throws(()=>gmail.text({mimeType:'text/html'}),/No readable/);
  assert.throws(()=>gmail.text(plain('x'.repeat(60001))),/60000/);
  assert.throws(()=>gmail.text({parts:Array.from({length:201},()=>plain('item'))}),/structure/);
 });
