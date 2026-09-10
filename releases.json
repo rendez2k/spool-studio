@@ -1,5 +1,13 @@
 [
   {
+    "version": "1.4.3",
+    "date": "2026-09-10",
+    "title": "Clearer Gmail order selection",
+    "changes": [
+      "Gmail shows how many emails are selected, stops at ten and offers Clear selection without clearing your draft. Order searches also exclude return, refund and cancellation subjects."
+    ]
+  },
+  {
     "version": "1.4.2",
     "date": "2026-09-10",
     "title": "Safer Gmail connection setup",

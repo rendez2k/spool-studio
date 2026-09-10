@@ -5,7 +5,7 @@ import {readFileSync} from 'node:fs';
 import {createRequire} from 'node:module';
 const core=createRequire(import.meta.url)('../out/gmail-core.js');
 function harness(){
- const elements=new Map(),events={},calls=[];let clientConfig,resolveSlow,resolveSetup,slowSetup=false,requests=0,slow=false,currentAccount='user_alice',enabled=true,scopeGranted=true;
+ const elements=new Map(),events={},calls=[];let clientConfig,resolveSlow,resolveSetup,slowSetup=false,messageCount=1,requests=0,slow=false,currentAccount='user_alice',enabled=true,scopeGranted=true;
  function element(){return {children:[],value:'',textContent:'',disabled:false,hidden:false,checked:false,append(...values){this.children.push(...values)},replaceChildren(...values){this.children=values},focus(){},remove(){},querySelectorAll(selector){return this.children.flatMap(child=>[...(child.type==='checkbox'&&(selector!=='input:checked'||child.checked)?[child]:[]),...child.querySelectorAll(selector)])}}}
  const node=id=>{if(!elements.has(id))elements.set(id,element());return elements.get(id)};
  node('gmail-connect').hidden=true;
@@ -16,13 +16,13 @@ function harness(){
    calls.push({url,options});
    if(url==='/api/gmail-config'){const reply={enabled,clientId:'123-test.apps.googleusercontent.com',testing:true};if(slowSetup)await new Promise(resolve=>resolveSetup=resolve);return Response.json(reply)}
    assert(url.startsWith('https://gmail.googleapis.com/gmail/v1/users/me/'));assert.equal(options.credentials,'omit');assert.equal(options.redirect,'error');assert.equal(options.headers.Authorization,'Bearer test-token');
-   if(url.includes('messages?'))return Response.json({messages:[{id:'abc'}]});
+   if(url.includes('messages?'))return Response.json({messages:Array.from({length:messageCount},(_,index)=>({id:(2748+index).toString(16)}))});
    if(url.includes('format=metadata'))return Response.json({payload:{headers:[{name:'Subject',value:'Synthetic filament order'}]}});
    if(slow)await new Promise(resolve=>{resolveSlow=resolve});
    return Response.json({payload:{mimeType:'text/plain',body:{data:Buffer.from('SUNLU PLA Orange 1 kg\nQuantity: 1').toString('base64url')}}});
   }});
  vm.runInContext(readFileSync(new URL('../out/gmail-import.js',import.meta.url),'utf8'),context);
- return {node,context,calls,events,get requests(){return requests},delaySetup(){slowSetup=true},finishSetup(){slowSetup=false;resolveSetup?.()},delayGoogle(){context.window.google=undefined},finishGoogle(){context.window.google={accounts:{oauth2}};context.document.head.children.at(-1).onload()},consent(){clientConfig.callback({access_token:'test-token',expires_in:3600})},get config(){return clientConfig},setEnabled(value){enabled=value},setGranted(value){scopeGranted=value},setAccount(value){currentAccount=value},slow(){slow=true},finishSlow(){resolveSlow?.()}};
+ return {node,context,calls,events,setMessageCount(value){messageCount=value},get requests(){return requests},delaySetup(){slowSetup=true},finishSetup(){slowSetup=false;resolveSetup?.()},delayGoogle(){context.window.google=undefined},finishGoogle(){context.window.google={accounts:{oauth2}};context.document.head.children.at(-1).onload()},consent(){clientConfig.callback({access_token:'test-token',expires_in:3600})},get config(){return clientConfig},setEnabled(value){enabled=value},setGranted(value){scopeGranted=value},setAccount(value){currentAccount=value},slow(){slow=true},finishSlow(){resolveSlow?.()}};
 }
 test('Gmail is opt-in, requests read-only access and copies only selected plain text without a save',async()=>{
  const app=harness();assert.equal(app.calls.length,0);
@@ -40,7 +40,7 @@ test('Gmail is opt-in, requests read-only access and copies only selected plain 
 test('Gmail defaults to purchase subjects with a deliberate unfiltered fallback and invalidates old selections',async()=>{
  const query=core.searchQuery(core.defaultQuery);
  for(const subject of ['confirmed','confirmation','receipt','invoice','ordered'])assert(query.includes('subject:'+subject));
- for(const subject of ['shipment','delivery','delivered','tracking','welcome','account','password','newsletter','setup'])assert(query.includes('-subject:'+subject));
+ for(const subject of ['shipment','delivery','delivered','tracking','welcome','account','password','newsletter','setup','return','returned','refund','refunded','cancelled','canceled','cancellation'])assert(query.includes('-subject:'+subject));
  assert.equal(core.searchQuery('from:shop.example after:2026/09/01','all'),'from:shop.example after:2026/09/01');
  assert.throws(()=>core.searchQuery('  '),/Enter a brand/);
  const app=harness();await app.node('gmail-prepare').onclick();app.node('gmail-connect').onclick();app.consent();
@@ -52,6 +52,18 @@ test('Gmail defaults to purchase subjects with a deliberate unfiltered fallback 
  app.node('gmail-query').value='from:another.example';app.node('gmail-query').oninput();assert.equal(app.node('gmail-results').children.length,0);
  app.node('gmail-disconnect').onclick();
 });
+test('Gmail selection count prevents over-selection and can clear without losing results or a draft',async()=>{
+ const app=harness();app.setMessageCount(12);await app.node('gmail-prepare').onclick();app.node('gmail-connect').onclick();app.consent();await app.node('gmail-search').onclick();
+ const boxes=app.node('gmail-results').children.map(label=>label.children[0]);
+ assert.equal(app.node('gmail-read').disabled,true);assert.equal(app.node('gmail-clear-selection').disabled,true);assert.equal(app.node('gmail-selection').textContent,'0 of 10 emails selected');
+ for(const box of boxes.slice(0,10)){box.checked=true;box.onchange()}
+ assert.equal(app.node('gmail-read').disabled,false);assert.match(app.node('gmail-selection').textContent,/10 of 10/);assert(boxes.slice(10).every(box=>box.disabled));assert(boxes.slice(0,10).every(box=>!box.disabled));
+ boxes[0].checked=false;boxes[0].onchange();assert.equal(boxes[10].disabled,false);assert.match(app.node('gmail-selection').textContent,/9 of 10/);
+ app.node('source-text').value='keep my draft';app.node('gmail-clear-selection').onclick();assert.equal(app.node('source-text').value,'keep my draft');assert.equal(app.node('gmail-results').children.length,12);assert(boxes.every(box=>!box.checked&&!box.disabled));assert.equal(app.node('gmail-read').disabled,true);
+ boxes[0].checked=true;boxes[0].onchange();app.node('gmail-query').oninput();assert.equal(app.node('gmail-selection').textContent,'0 of 10 emails selected');assert.equal(app.node('gmail-read').disabled,true);
+ app.node('gmail-disconnect').onclick();
+});
+
 test('unconfigured Gmail and rejected scope never load messages',async()=>{
  const app=harness();app.setEnabled(false);await app.node('gmail-prepare').onclick();assert.equal(app.node('gmail-connect').hidden,true);
  assert.match(app.node('gmail-status').textContent,/not enabled/);assert.equal(app.config,undefined);

@@ -5,10 +5,13 @@
  const status=text=>node('gmail-status').textContent=text;
  function controls(){
   const ready=Boolean(library)&&!saving&&!reading&&!busy;
+  const selected=node('gmail-results').querySelectorAll('input:checked').length;
+  node('gmail-selection').textContent=selected+' of 10 emails selected'+(selected>=10?' · Clear or untick an email to choose another.':'');
+  node('gmail-clear-selection').disabled=!ready||!selected;
   node('gmail-prepare').disabled=!ready;node('gmail-connect').disabled=!ready||!tokenClient||preparedOwner!==library?.accountKey;
   node('gmail-search').disabled=node('gmail-query').disabled=node('gmail-search-kind').disabled=!ready||!token;
-  node('gmail-read').disabled=!ready||!token;node('gmail-disconnect').disabled=!token;
-  node('gmail-cancel').hidden=!busy;node('gmail-results').querySelectorAll('input').forEach(input=>input.disabled=!ready);
+  node('gmail-read').disabled=!ready||!token||!selected||selected>10;node('gmail-disconnect').disabled=!token;
+  node('gmail-cancel').hidden=!busy;node('gmail-results').querySelectorAll('input').forEach(input=>input.disabled=!ready||(!input.checked&&selected>=10));
  }
  function clear(resetConfiguration=false){
   sequence++;controller?.abort();controller=null;clearTimeout(consentTimer);token='';expires=0;owner='';busy=false;
@@ -79,7 +82,7 @@
     if(!/^[a-f0-9]+$/i.test(message.id))continue;
     const result=await googleRequest('messages/'+message.id+'?format=metadata&metadataHeaders=Subject&metadataHeaders=From&metadataHeaders=Date',current);
     const headers=result.payload?.headers||[],header=name=>headers.find(header=>header.name.toLowerCase()===name)?.value||'';
-    const label=document.createElement('label'),checkbox=document.createElement('input'),title=document.createElement('span');checkbox.type='checkbox';checkbox.value=message.id;title.textContent=[header('subject')||'No subject',header('from'),header('date')].join(' · ');label.append(checkbox,title);node('gmail-results').append(label);
+    const label=document.createElement('label'),checkbox=document.createElement('input'),title=document.createElement('span');checkbox.type='checkbox';checkbox.value=message.id;checkbox.onchange=controls;title.textContent=[header('subject')||'No subject',header('from'),header('date')].join(' · ');label.append(checkbox,title);node('gmail-results').append(label);controls();
    }
    status(node('gmail-results').children.length?'Select up to 10 order emails. Pick one confirmation per order, not a receipt as well. Bodies load only when you choose Copy selected order text.'+(listing.nextPageToken?' More matches exist: narrow by shop or date to find older orders.':''):'No matching emails. Try another brand or date, or choose All matching emails if the shop uses a different subject.');
   }catch(error){if(valid(current))status(error.message)}finally{if(valid(current)){busy=false;controls()}}
@@ -99,7 +102,8 @@
   }catch(error){if(valid(current))status(error.message)}finally{if(valid(current)){busy=false;controls()}}
  };
  node('gmail-cancel').onclick=()=>{sequence++;controller?.abort();clearTimeout(consentTimer);busy=false;controls();status('Cancelled. No import was saved.')};
- node('gmail-search-kind').onchange=node('gmail-query').oninput=()=>{node('gmail-results').replaceChildren();status('Search changed. Choose Find up to 20 emails to load fresh results.')};
+ node('gmail-clear-selection').onclick=()=>{if(busy||saving||reading)return;node('gmail-results').querySelectorAll('input').forEach(input=>input.checked=false);controls()};
+ node('gmail-search-kind').onchange=node('gmail-query').oninput=()=>{node('gmail-results').replaceChildren();controls();status('Search changed. Choose Find up to 20 emails to load fresh results.')};
  node('gmail-disconnect').onclick=()=>{const previous=token;clear(true);const current=sequence,accountKey=library?.accountKey;status('Disconnected on this page. Revoking Gmail permission…');window.google?.accounts?.oauth2.revoke(previous,result=>{if(current===sequence&&library?.accountKey===accountKey)status(result.successful?'Gmail permission revoked. Copied import text remains until you clear it.':'Page disconnected. You can remove access in your Google Account permissions.')})};
  window.GmailImport={controls,clear:()=>{clear(true);status('Gmail session cleared.')}};
  window.addEventListener('pagehide',()=>clear(true));window.addEventListener('focus',controls);controls();

@@ -5,7 +5,7 @@
   const terms=String(query||'').trim();
   if(!terms)throw Error('Enter a brand, shop or filament to search for.');
   if(kind==='all')return terms;
-  return '('+terms+') {subject:confirmed subject:confirmation subject:receipt subject:invoice subject:ordered subject:"thank you for your order" subject:"order placed" subject:"order received"} -subject:shipment -subject:shipped -subject:dispatch -subject:dispatched -subject:delivery -subject:delivered -subject:tracking -subject:"on the way" -subject:welcome -subject:account -subject:password -subject:verification -subject:newsletter -subject:"set up" -subject:setup';
+  return '('+terms+') {subject:confirmed subject:confirmation subject:receipt subject:invoice subject:ordered subject:"thank you for your order" subject:"order placed" subject:"order received"} -subject:shipment -subject:shipped -subject:dispatch -subject:dispatched -subject:delivery -subject:delivered -subject:tracking -subject:"on the way" -subject:welcome -subject:account -subject:password -subject:verification -subject:newsletter -subject:"set up" -subject:setup -subject:return -subject:returned -subject:refund -subject:refunded -subject:cancelled -subject:canceled -subject:cancellation';
  }
  function text(payload){
   let size=0,parts=0;
