@@ -1,0 +1,13 @@
+services:
+  spool-studio-bridge:
+    image: ghcr.io/rendez2k/spool-studio-bridge:0.1.0
+    restart: unless-stopped
+    init: true
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    stop_grace_period: 2m
+    volumes:
+      - ./spool-studio-printer.private.json:/config/printer.private.json:ro

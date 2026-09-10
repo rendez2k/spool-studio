@@ -1,0 +1,10 @@
+**
+!package.json
+!package-lock.json
+!scripts/
+!scripts/printer-bridge.mjs
+!scripts/spoolman-bridge.mjs
+!out/
+!out/printer-core.js
+!bridge-desktop/
+!bridge-desktop/container.mjs

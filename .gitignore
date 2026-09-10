@@ -17,3 +17,4 @@ out/previews/
 .netlify/
 .clerk/
 *.private.json
+bridge-desktop/app/

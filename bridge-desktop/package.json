@@ -1,0 +1,39 @@
+{
+  "name": "spool-studio-bridge",
+  "productName": "Spool Studio Bridge",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A local companion for reviewed Spool Studio printer requests",
+  "author": "Robin Edwards",
+  "main": "app/main.cjs",
+  "scripts": {
+    "build": "node build.mjs",
+    "start": "npm run build && electron .",
+    "package": "npm run build && electron-builder --publish never"
+  },
+  "devDependencies": {
+    "electron": "44.3.0",
+    "electron-builder": "26.15.3"
+  },
+  "build": {
+    "appId": "digital.productkit.spoolstudiobridge",
+    "productName": "Spool Studio Bridge",
+    "asar": true,
+    "directories": { "output": "../dist/bridge-desktop" },
+    "files": ["app/**/*", "package.json"],
+    "win": { "target": ["nsis"], "icon": "app/icon.png" },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "artifactName": "Spool-Studio-Bridge-${version}-windows-${arch}-setup.exe"
+    },
+    "mac": {
+      "target": ["zip"],
+      "identity": null,
+      "category": "public.app-category.utilities",
+      "icon": "app/icon.png",
+      "artifactName": "Spool-Studio-Bridge-${version}-mac-${arch}.zip"
+    }
+  }
+}

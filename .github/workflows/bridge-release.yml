@@ -1,0 +1,60 @@
+name: Bridge beta release
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  desktop:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: npm ci --prefix bridge-desktop
+      - run: node --test tests/bridge-desktop.test.mjs
+      - name: Package Windows
+        if: runner.os == 'Windows'
+        run: npm run package --prefix bridge-desktop -- --win --x64
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+      - name: Package Mac
+        if: runner.os == 'macOS'
+        run: npm run package --prefix bridge-desktop -- --mac --x64 --arm64
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bridge-${{ runner.os }}
+          path: |
+            dist/bridge-desktop/*.exe
+            dist/bridge-desktop/*.zip
+          if-no-files-found: error
+      - name: Smoke test application entry
+        run: node bridge-desktop/node_modules/electron/cli.js bridge-desktop --smoke-test
+  docker:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: bridge-desktop/Dockerfile
+          push: true
+          tags: ghcr.io/rendez2k/spool-studio-bridge:0.1.0
+          labels: org.opencontainers.image.source=https://github.com/rendez2k/spool-studio
