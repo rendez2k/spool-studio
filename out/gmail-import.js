@@ -6,13 +6,13 @@
  function controls(){
   const ready=Boolean(library)&&!saving&&!reading&&!busy;
   node('gmail-prepare').disabled=!ready;node('gmail-connect').disabled=!ready||!tokenClient;
-  node('gmail-search').disabled=node('gmail-query').disabled=!ready||!token;
+  node('gmail-search').disabled=node('gmail-query').disabled=node('gmail-search-kind').disabled=!ready||!token;
   node('gmail-read').disabled=!ready||!token;node('gmail-disconnect').disabled=!token;
   node('gmail-cancel').hidden=!busy;node('gmail-results').querySelectorAll('input').forEach(input=>input.disabled=!ready);
  }
  function clear(){
   sequence++;controller?.abort();controller=null;clearTimeout(consentTimer);token='';expires=0;owner='';busy=false;
-  node('gmail-results').replaceChildren();node('gmail-query').value='newer_than:1y (filament OR "Bambu Lab" OR SUNLU OR ELEGOO)';controls();
+  node('gmail-results').replaceChildren();node('gmail-query').value=SpoolGmail.defaultQuery;node('gmail-search-kind').value='orders';controls();
  }
  function valid(current){return current===sequence&&library?.accountKey===owner}
  async function account(){
@@ -66,14 +66,15 @@
   if(busy||!token||!library||saving||reading)return;const current=++sequence;busy=true;controller=new AbortController();controls();node('gmail-results').replaceChildren();status('Finding up to 20 email subjects…');
   try{
    await account();if(!valid(current))return;
-   const listing=await googleRequest('messages?maxResults=20&q='+encodeURIComponent(node('gmail-query').value.trim()),current);
+   const query=SpoolGmail.searchQuery(node('gmail-query').value,node('gmail-search-kind').value);
+   const listing=await googleRequest('messages?maxResults=20&q='+encodeURIComponent(query),current);
    for(const message of (listing.messages||[]).slice(0,20)){
     if(!/^[a-f0-9]+$/i.test(message.id))continue;
     const result=await googleRequest('messages/'+message.id+'?format=metadata&metadataHeaders=Subject&metadataHeaders=From&metadataHeaders=Date',current);
     const headers=result.payload?.headers||[],header=name=>headers.find(header=>header.name.toLowerCase()===name)?.value||'';
     const label=document.createElement('label'),checkbox=document.createElement('input'),title=document.createElement('span');checkbox.type='checkbox';checkbox.value=message.id;title.textContent=[header('subject')||'No subject',header('from'),header('date')].join(' · ');label.append(checkbox,title);node('gmail-results').append(label);
    }
-   status(node('gmail-results').children.length?'Select up to 10 order emails. Their bodies will only load when you choose Copy selected order text.':'No matching emails. Adjust your search.');
+   status(node('gmail-results').children.length?'Select up to 10 order emails. Pick one confirmation per order, not a receipt as well. Bodies load only when you choose Copy selected order text.'+(listing.nextPageToken?' More matches exist: narrow by shop or date to find older orders.':''):'No matching emails. Try another brand or date, or choose All matching emails if the shop uses a different subject.');
   }catch(error){if(valid(current))status(error.message)}finally{if(valid(current)){busy=false;controls()}}
  };
  node('gmail-read').onclick=async()=>{
@@ -91,6 +92,7 @@
   }catch(error){if(valid(current))status(error.message)}finally{if(valid(current)){busy=false;controls()}}
  };
  node('gmail-cancel').onclick=()=>{sequence++;controller?.abort();clearTimeout(consentTimer);busy=false;controls();status('Cancelled. No import was saved.')};
+ node('gmail-search-kind').onchange=node('gmail-query').oninput=()=>{node('gmail-results').replaceChildren();status('Search changed. Choose Find up to 20 emails to load fresh results.')};
  node('gmail-disconnect').onclick=()=>{const previous=token;clear();status('Disconnected on this page. Revoking Gmail permission…');window.google?.accounts?.oauth2.revoke(previous,result=>status(result.successful?'Gmail permission revoked. Copied import text remains until you clear it.':'Page disconnected. You can remove access in your Google Account permissions.'))};
  window.GmailImport={controls,clear:()=>{clear();status('Gmail session cleared.')}};
  window.addEventListener('pagehide',clear);window.addEventListener('focus',controls);controls();

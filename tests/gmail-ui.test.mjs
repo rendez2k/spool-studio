@@ -29,10 +29,28 @@ test('Gmail is opt-in, requests read-only access and copies only selected plain 
  await app.node('gmail-prepare').onclick();assert.equal(app.config.scope,'https://www.googleapis.com/auth/gmail.readonly');assert.equal(app.config.include_granted_scopes,false);
  app.node('gmail-connect').onclick();assert.equal(app.calls.length,1);app.consent();
  await app.node('gmail-search').onclick();assert.equal(app.node('gmail-results').children.length,1);assert(!app.calls.some(call=>call.url.includes('format=full')));
+ const query=new URL(app.calls.find(call=>call.url.includes('messages?')).url).searchParams.get('q');
+ assert.match(query,/subject:confirmed/);assert.match(query,/-subject:shipment/);assert.match(query,/-subject:setup/);
  app.node('gmail-results').children[0].children[0].checked=true;
  await app.node('gmail-read').onclick();assert.match(app.node('source-text').value,/SUNLU PLA Orange/);assert.equal(app.context.rows.length,0);
  assert(!app.calls.some(call=>call.options.method==='POST'));app.node('gmail-disconnect').onclick();assert.match(app.node('gmail-status').textContent,/revoked/);
  assert.match(app.node('source-text').value,/SUNLU/);assert.equal(app.node('gmail-results').children.length,0);
+});
+
+test('Gmail defaults to purchase subjects with a deliberate unfiltered fallback and invalidates old selections',async()=>{
+ const query=core.searchQuery(core.defaultQuery);
+ for(const subject of ['confirmed','confirmation','receipt','invoice','ordered'])assert(query.includes('subject:'+subject));
+ for(const subject of ['shipment','delivery','delivered','tracking','welcome','account','password','newsletter','setup'])assert(query.includes('-subject:'+subject));
+ assert.equal(core.searchQuery('from:shop.example after:2026/09/01','all'),'from:shop.example after:2026/09/01');
+ assert.throws(()=>core.searchQuery('  '),/Enter a brand/);
+ const app=harness();await app.node('gmail-prepare').onclick();app.node('gmail-connect').onclick();app.consent();
+ await app.node('gmail-search').onclick();assert.equal(app.node('gmail-results').children.length,1);
+ app.node('gmail-search-kind').value='all';app.node('gmail-search-kind').onchange();assert.equal(app.node('gmail-results').children.length,0);
+ await app.node('gmail-search').onclick();
+ const latest=app.calls.filter(call=>call.url.includes('messages?')).at(-1);
+ assert.equal(new URL(latest.url).searchParams.get('q'),core.defaultQuery);
+ app.node('gmail-query').value='from:another.example';app.node('gmail-query').oninput();assert.equal(app.node('gmail-results').children.length,0);
+ app.node('gmail-disconnect').onclick();
 });
 test('unconfigured Gmail and rejected scope never load messages',async()=>{
  const app=harness();app.setEnabled(false);await app.node('gmail-prepare').onclick();assert.equal(app.node('gmail-connect').hidden,true);

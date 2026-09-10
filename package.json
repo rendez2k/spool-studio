@@ -2,6 +2,7 @@
   "name": "filament-library",
   "private": true,
   "scripts": {
+    "release": "node scripts/releases.mjs",
     "build": "node scripts/build.mjs",
     "dev": "node scripts/dev.mjs",
     "db:generate": "drizzle-kit generate",

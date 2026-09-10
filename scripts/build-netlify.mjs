@@ -2,6 +2,8 @@ import "./build.mjs";
 import { mkdir, readdir, readFile, writeFile, cp, rm } from "node:fs/promises";
 import path from "node:path";
 import { createHash } from "node:crypto";
+import { renderReleaseHTML, validateReleases } from './releases.mjs';
+const releases = validateReleases(JSON.parse(await readFile('releases.json', 'utf8')));
 
 const publicRoot = path.resolve("dist/netlify-public");
 const pagesRoot = path.resolve("dist/netlify-pages");
@@ -23,6 +25,7 @@ async function collect(directory, prefix = "") {
     await mkdir(path.dirname(destination), { recursive: true });
     if (/\.(html|js)$/.test(entry.name)) {
       let content = portableText(await readFile(path.join(directory, entry.name), "utf8"));
+      if (entry.name.endsWith('.html')) content = renderReleaseHTML(content, releases);
       if (privatePages.has(relative)) content = content.replace("</head>", "<!-- CLERK --></head>");
       if (relative === "privacy.html") content = content.replace("OpenAI Sites handles Sign in and provides a Site-specific account identifier. Spool Studio uses that identifier to retrieve and protect your records. It does not receive your ChatGPT password or request access to your chats or mailbox.", "Clerk handles account registration and sign-in. Spool Studio uses your Clerk account identifier to protect your records. Netlify hosts the app and its private Postgres inventory database. Spool Studio does not connect to your mailbox or receive your sign-in password.");
       if (relative === "privacy.html") content = content.replace("Spool Studio runs on OpenAI Sites using Cloudflare Workers and a D1 database.", "Spool Studio runs on Netlify Functions and Netlify Database (Postgres), with Clerk for authentication.").replace('https://openai.com/policies/eu-privacy-policy/', 'https://clerk.com/legal/privacy').replace('OpenAI’s Europe/UK privacy policy', 'Clerk’s privacy policy').replace('https://www.cloudflare.com/privacypolicy/', 'https://www.netlify.com/privacy/').replace('Cloudflare’s privacy policy', 'Netlify’s privacy policy').replace('There is currently no automatic expiry or self-service account deletion.', 'There is currently no automatic inventory expiry. Deleting a Clerk login does not automatically delete the separate inventory records; contact us to request removal of both.');
@@ -48,5 +51,5 @@ for (const directory of [publicRoot, pagesRoot, "server", "netlify/functions"]) 
 const version = fingerprint.digest("hex").slice(0, 12);
 const appPage = path.join(pagesRoot, "app.html");
 await writeFile(appPage, (await readFile(appPage, "utf8")).replace('name="app-release" content="development"', 'name="app-release" content="' + version + '"'));
-await writeFile(path.join(publicRoot, "app-release.json"), JSON.stringify({ version }));
+await writeFile(path.join(publicRoot, "app-release.json"), JSON.stringify({ version, displayVersion: releases[0].version }));
 console.log("Netlify assets prepared. Private pages remain function-only; no account data is bundled.");

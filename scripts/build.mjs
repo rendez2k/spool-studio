@@ -3,6 +3,8 @@ import { readdir, readFile, mkdir, cp } from "node:fs/promises";
 import path from "node:path";
 import { Resvg } from "@resvg/resvg-js";
 import { writeFile } from "node:fs/promises";
+import { renderReleaseHTML, validateReleases } from './releases.mjs';
+const releases = validateReleases(JSON.parse(await readFile('releases.json', 'utf8')));
 
 const types = { ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8", ".png": "image/png", ".svg": "image/svg+xml", ".jpeg": "image/jpeg", ".jpg": "image/jpeg", ".webmanifest": "application/manifest+json; charset=utf-8" };
 const assets = {};
@@ -24,7 +26,11 @@ async function collect(directory, prefix = "") {
     const url = prefix + "/" + entry.name;
     if (url === "/previews") continue;
     if (entry.isDirectory()) await collect(file, url);
-    else assets[url] = { data: (await readFile(file)).toString("base64"), type: types[path.extname(file)] || (url.endsWith(".gz") ? "application/octet-stream" : "text/plain; charset=utf-8") };
+    else {
+      const bytes = await readFile(file);
+      const content = file.endsWith('.html') ? Buffer.from(renderReleaseHTML(bytes.toString('utf8'), releases)) : bytes;
+      assets[url] = { data: content.toString("base64"), type: types[path.extname(file)] || (url.endsWith(".gz") ? "application/octet-stream" : "text/plain; charset=utf-8") };
+    }
   }
 }
 const icon = await readFile("out/icons/filament.svg");

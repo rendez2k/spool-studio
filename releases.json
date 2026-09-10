@@ -1,0 +1,14 @@
+[
+  {
+    "version": "1.0.0",
+    "date": "2026-09-10",
+    "title": "Easier organising, clearer imports",
+    "changes": [
+      "Gmail test importer: focus on order confirmations and receipts, rather than delivery updates and setup emails. Switch to All matching emails when needed. Gmail is still a private test, not available to every account.",
+      "Sort your collection by purchase or import date. Select entries for bulk edits and print labels for just that selection.",
+      "Use smaller cards on mobile, with your preference remembered on that device. Full-size cards now keep their action buttons aligned.",
+      "Print box and spool labels in multiple sizes, including 60 × 30 mm and MUNBYN 76 × 50 mm. Permanent spool IDs and private QR links are available under Physical spools & usage.",
+      "Find this version number and release notes in the library, importer, phone programmer and App & device. Existing installs update online; no reinstall is needed."
+    ]
+  }
+]

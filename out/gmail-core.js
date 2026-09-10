@@ -1,5 +1,12 @@
 'use strict';
 (function(root){
+ const defaultQuery='newer_than:1y (filament OR "Bambu Lab" OR SUNLU OR ELEGOO)';
+ function searchQuery(query,kind='orders'){
+  const terms=String(query||'').trim();
+  if(!terms)throw Error('Enter a brand, shop or filament to search for.');
+  if(kind==='all')return terms;
+  return '('+terms+') {subject:confirmed subject:confirmation subject:receipt subject:invoice subject:ordered subject:"thank you for your order" subject:"order placed" subject:"order received"} -subject:shipment -subject:shipped -subject:dispatch -subject:dispatched -subject:delivery -subject:delivered -subject:tracking -subject:"on the way" -subject:welcome -subject:account -subject:password -subject:verification -subject:newsletter -subject:"set up" -subject:setup';
+ }
  function text(payload){
   let size=0,parts=0;
   function visit(part,depth){
@@ -18,5 +25,5 @@
   if(!result)throw Error('No plain-text email body was available. Paste the order text or import a screenshot instead.');
   return result;
  }
- const api={text};if(typeof module==='object'&&module.exports)module.exports=api;else root.SpoolGmail=api;
+ const api={text,defaultQuery,searchQuery};if(typeof module==='object'&&module.exports)module.exports=api;else root.SpoolGmail=api;
 })(typeof globalThis==='object'?globalThis:this);
