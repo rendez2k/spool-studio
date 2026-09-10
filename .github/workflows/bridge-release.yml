@@ -18,7 +18,7 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm ci --prefix bridge-desktop
-      - run: node --test tests/bridge-desktop.test.mjs
+      - run: node --test tests/bridge-desktop.test.mjs tests/bridge-feedback.test.mjs
       - name: Package Windows
         if: runner.os == 'Windows'
         run: npm run package --prefix bridge-desktop -- --win --x64
@@ -56,5 +56,5 @@ jobs:
           context: .
           file: bridge-desktop/Dockerfile
           push: true
-          tags: ghcr.io/rendez2k/spool-studio-bridge:0.1.0
+          tags: ghcr.io/rendez2k/spool-studio-bridge:0.1.1
           labels: org.opencontainers.image.source=https://github.com/rendez2k/spool-studio

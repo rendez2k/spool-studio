@@ -3,7 +3,11 @@ let pending=false;
 const node=id=>document.getElementById(id);
 function render(state){
  node('origin').textContent=state.origin||'Not connected';node('printer').textContent=state.printerUrl||'Not configured';node('spoolman').textContent=state.spoolmanUrl||'Not linked';
- node('badge').textContent=state.running?'Running':state.busy?'Working…':'Stopped';
+ node('badge').textContent=state.running?'Running':state.busy?'Working…':state.checked?'Ready · not running':'Not running';
+ node('check-result').textContent=state.checkMessage||'';node('check-result').hidden=!state.checkMessage;
+ node('check-result').dataset.state=state.checkState||'idle';
+ node('check').textContent=state.checkState==='checking'?'Checking printer…':'Check connection · read-only';
+ node('check').setAttribute('aria-busy',String(state.checkState==='checking'));
  node('message').textContent=state.message;node('last-contact').textContent=state.lastContact?'Last contact: '+new Date(state.lastContact).toLocaleTimeString():'';
  node('import').disabled=pending||state.running||state.busy;node('forget').disabled=pending||!state.configured||state.running||state.busy;
  node('check').disabled=pending||!state.configured||state.running||state.busy;

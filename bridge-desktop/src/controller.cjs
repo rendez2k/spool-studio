@@ -2,31 +2,32 @@
 class BridgeController {
  constructor(core,options={}){
   this.core=core;this.delay=options.delay||5000;this.notify=options.notify||(()=>{});this.schedule=options.schedule||setTimeout;this.cancel=options.cancel||clearTimeout;
-  this.config=null;this.running=false;this.busy=false;this.checked=false;this.timer=null;this.lastContact=null;this.message='Import your private printer configuration to begin.';
+  this.config=null;this.running=false;this.busy=false;this.checked=false;this.timer=null;this.lastContact=null;this.checkState='idle';this.checkMessage='';this.message='Import your private printer configuration to begin.';
  }
  status(){
-  return {configured:Boolean(this.config),origin:this.config?.origin||'',printerUrl:this.config?.printerUrl||'',spoolmanUrl:this.config?.spoolmanUrl||'',running:this.running,busy:this.busy,checked:this.checked,lastContact:this.lastContact,message:this.message};
+  return {configured:Boolean(this.config),origin:this.config?.origin||'',printerUrl:this.config?.printerUrl||'',spoolmanUrl:this.config?.spoolmanUrl||'',running:this.running,busy:this.busy,checked:this.checked,lastContact:this.lastContact,checkState:this.checkState,checkMessage:this.checkMessage,message:this.message};
  }
  emit(){this.notify(this.status());return this.status()}
  configure(value){
   if(this.running||this.busy)throw Error('Stop the bridge before changing its configuration.');
   const config=this.core.configuration(value);
   if(config.origin!=='https://spool-studio.uk')throw Error('This desktop build connects only to https://spool-studio.uk.');
-  this.config=config;this.checked=false;this.lastContact=null;this.message='Configuration loaded. Check the connection before starting.';return this.emit();
+  this.config=config;this.checked=false;this.lastContact=null;this.checkState='idle';this.checkMessage='';this.message='Configuration loaded. Check the connection before starting.';return this.emit();
  }
  forget(){
   if(this.running||this.busy)throw Error('Stop the bridge before removing its configuration.');
-  this.config=null;this.checked=false;this.lastContact=null;this.message='Configuration removed from this app. Revoke the key on the website to disable other copies.';return this.emit();
+  this.config=null;this.checked=false;this.lastContact=null;this.checkState='idle';this.checkMessage='';this.message='Configuration removed from this app. Revoke the key on the website to disable other copies.';return this.emit();
  }
  async check(){
   if(!this.config||this.busy||this.running)throw Error('Import a configuration and stop the bridge before checking.');
-  this.busy=true;this.checked=false;this.message='Checking the printer without changing its settings…';this.emit();
+  this.busy=true;this.checked=false;this.checkState='checking';this.checkMessage='Checking your printer… No settings are being changed.';this.message=this.checkMessage;this.emit();
   try{
    const status=await this.core.inspectPrinter(this.config);
    this.checked=status.supported;this.lastContact=new Date().toISOString();
-   this.message=!status.supported?'Printer reached, but the required U1 firmware command is unavailable.':status.ready?'Printer reached and idle. You can start the bridge.':'Printer reached. You can start, but changes stay blocked while the printer is busy.';
-  }catch{this.message='Could not reach the printer. Check its IP, Moonraker port, network and API key.'}
-  finally{this.busy=false;this.emit()}
+   this.checkState=!status.supported?'unsupported':status.ready?'ready':'busy';
+   this.message=!status.supported?'Printer reached, but not supported. The required U1 firmware command is unavailable.':status.ready?'Check passed — printer connected and idle. You can start the bridge.':'Check passed — printer connected, but not idle. You can start the bridge; settings changes remain blocked.';
+  }catch{this.checkState='error';this.message='Connection failed — could not check the printer. Check its IP, Moonraker port, network and API key, then try again.'}
+  finally{this.checkMessage=this.message;this.busy=false;this.emit()}
   return this.status();
  }
  async start(){

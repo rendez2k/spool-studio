@@ -58,6 +58,26 @@ test('unsupported and unreachable printers cannot enable start',async()=>{
  }
 });
 
+test('connection feedback covers progress, ready, busy, unsupported and failure without stale success',async()=>{
+ let resolveCheck;
+ const controller=new BridgeController({configuration,inspectPrinter:()=>new Promise(resolve=>{resolveCheck=resolve})});
+ controller.configure(config);
+ const pending=controller.check();
+ assert.equal(controller.status().checkState,'checking');assert.match(controller.status().checkMessage,/Checking/);
+ resolveCheck(snapshot);await pending;
+ assert.equal(controller.status().checkState,'ready');assert.match(controller.status().checkMessage,/Check passed/);
+ controller.stop();assert.equal(controller.status().checkState,'ready');
+ controller.core.inspectPrinter=async()=>({...snapshot,ready:false});
+ await controller.check();assert.equal(controller.status().checkState,'busy');assert.equal(controller.checked,true);
+ controller.core.inspectPrinter=async()=>({...snapshot,supported:false});
+ await controller.check();assert.equal(controller.status().checkState,'unsupported');assert.equal(controller.checked,false);
+ controller.core.inspectPrinter=async()=>{throw Error('Secret '+config.token)};
+ await controller.check();assert.equal(controller.status().checkState,'error');assert.match(controller.status().checkMessage,/Connection failed/);
+ assert(!controller.status().checkMessage.includes(config.token));assert.equal(controller.checked,false);
+ controller.configure(config);assert.equal(controller.status().checkState,'idle');assert.equal(controller.status().checkMessage,'');
+ controller.forget();assert.equal(controller.status().checkMessage,'');
+});
+
 test('credential vault refuses plaintext fallback and removes its own encrypted file',async()=>{
  const directory=await mkdtemp(path.join(tmpdir(),'studio-vault-'));
  try{

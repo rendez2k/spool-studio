@@ -1,5 +1,14 @@
 [
   {
+    "version": "1.9.1",
+    "date": "2026-09-10",
+    "title": "Visible printer connection feedback",
+    "changes": [
+      "Bridge desktop beta 0.1.1 shows checking, success, busy, unsupported and failed results beside Check connection, without scrolling.",
+      "The desktop badge distinguishes a successful check from a running bridge. Download and install the updated desktop app to receive this fix."
+    ]
+  },
+  {
     "version": "1.9.0",
     "date": "2026-09-10",
     "title": "A desktop companion for your printer",

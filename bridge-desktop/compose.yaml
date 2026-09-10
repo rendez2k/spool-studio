@@ -1,6 +1,6 @@
 services:
   spool-studio-bridge:
-    image: ghcr.io/rendez2k/spool-studio-bridge:0.1.0
+    image: ghcr.io/rendez2k/spool-studio-bridge:0.1.1
     restart: unless-stopped
     init: true
     read_only: true
