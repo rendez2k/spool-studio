@@ -4,6 +4,12 @@ Open **Send to printer** on a library card, the physical-reel page, the phone pr
 
 ## Local setup
 
+For the desktop beta, download [Spool Studio Bridge](https://spool-studio.uk/bridge.html). Windows/Mac users do not need Git, Node.js or a repository checkout. Create/download the private printer configuration in the website, import it into the app, choose **Check connection**, then **Start bridge**. Keep the computer awake. Closing the window leaves it in the tray/menu bar; Stop/ Quit safely finish any in-flight request. Restarting the app requires a fresh check/start.
+
+The beta is unsigned on Windows and not notarised on Mac. Do not disable operating-system security if installation is blocked. The download page also provides an advanced Docker option. This companion does not replace the separate Spoolman remaining-weight sync process.
+
+### Advanced: run from source
+
 Use Node.js 22+ and the current repository on a computer that can reach Moonraker. Install dependencies with `npm ci`. Open **Local bridge setup**, create a separate printer key, enter the printer's private IPv4 origin (including its port when needed), then download the private JSON on that computer. The configuration explicitly enables `allowPrinterWrites`; it is not the Spoolman weight-sync configuration. An optional `printerApiKey` may be set locally when Moonraker requires it. Neither the IP nor that API key is uploaded.
 
 ```sh

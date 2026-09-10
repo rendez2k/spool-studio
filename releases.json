@@ -1,5 +1,16 @@
 [
   {
+    "version": "1.9.0",
+    "date": "2026-09-10",
+    "title": "A desktop companion for your printer",
+    "changes": [
+      "Download Spool Studio Bridge for Windows or Mac: import your private configuration, check the connection, then start. No Node installation or repository checkout is needed.",
+      "The desktop beta keeps credentials in encrypted operating-system storage and runs in the tray or menu bar. It requires a manual check/start after restarting.",
+      "Printer setup now leads through the desktop flow, with Docker and source instructions kept as advanced options. This companion sends reviewed printer settings; Spoolman weight sync remains separate.",
+      "The first desktop packages are unsigned and not Apple-notarised. Operating systems may block installation; trusted signing and real-hardware acceptance remain outstanding."
+    ]
+  },
+  {
     "version": "1.8.1",
     "date": "2026-09-10",
     "title": "Printer setup stays put",
