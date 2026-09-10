@@ -10,6 +10,7 @@ FROM node:24-alpine
 ENV NODE_ENV=production
 WORKDIR /app
 COPY --from=build /build/bridge.cjs ./bridge.cjs
+COPY --from=build /build/node_modules/ipaddr.js/LICENSE ./IPADDR-LICENSE.txt
 COPY bridge-desktop/container.mjs ./container.mjs
 USER node
-CMD ["node", "container.mjs"]
+ENTRYPOINT ["node", "container.mjs"]
