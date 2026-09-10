@@ -17,8 +17,8 @@ test('uninstall removes only this startup item and preserves it during app upgra
 });
 
 test('Windows startup is opt-in, packaged-only and registers no credentials',()=>{
- let settings={openAtLogin:false,executableWillLaunchAtLogin:false},written;
- const app={isPackaged:true,getLoginItemSettings:options=>{assert.deepEqual(options.args,['--startup']);return settings},setLoginItemSettings:options=>{written=options;settings={openAtLogin:options.openAtLogin,executableWillLaunchAtLogin:options.enabled}}};
+ let settings={openAtLogin:false,executableWillLaunchAtLogin:false,launchItems:[]},written;
+ const app={isPackaged:true,getLoginItemSettings:options=>{assert.deepEqual(options.args,['--startup']);assert.equal(options.path,'"C:\\Programs\\Spool Studio Bridge.exe"');return settings},setLoginItemSettings:options=>{written=options;settings={openAtLogin:false,executableWillLaunchAtLogin:options.enabled,launchItems:options.openAtLogin?[{name:options.name,scope:'user',enabled:options.enabled}]:[]}}};
  const startup=windowsStartup(app,'win32','C:\\Programs\\Spool Studio Bridge.exe');
  assert.equal(startup.status().enabled,false);assert.equal(written,undefined);
  assert.equal(startup.set(true).enabled,true);assert.equal(written.name,'Spool Studio Bridge');assert.deepEqual(written.args,['--startup']);assert(!JSON.stringify(written).includes(config.token));
@@ -29,6 +29,8 @@ test('Windows startup is opt-in, packaged-only and registers no credentials',()=
  assert.throws(()=>startup.set('true'));
  settings={openAtLogin:true,executableWillLaunchAtLogin:true,launchItems:[{name:'Spool Studio Bridge',scope:'user',enabled:false}]};
  assert.equal(startup.status().enabled,false);assert.match(startup.status().message,/Windows has disabled/);
+ settings={openAtLogin:true,executableWillLaunchAtLogin:true,launchItems:[{name:'Another app',scope:'user',enabled:true},{name:'Spool Studio Bridge',scope:'machine',enabled:true}]};
+ assert.equal(startup.status().registered,false);assert.equal(startup.status().enabled,false);
 });
 
 test('startup API failures cannot report a successful registration',()=>{

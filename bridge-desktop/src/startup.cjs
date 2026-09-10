@@ -5,10 +5,10 @@ function windowsStartup(app,platform=process.platform,executable=process.execPat
  function status(){
   if(!supported)return {supported:false,enabled:false,registered:false,message:'Windows startup is available in the installed Windows app.'};
   try{
-   const settings=app.getLoginItemSettings(options);
-   const registered=settings.openAtLogin===true;
+   const settings=app.getLoginItemSettings({...options,path:'"'+executable+'"'});
    const entry=settings.launchItems?.find(item=>item.name===options.name&&item.scope==='user');
-   const enabled=registered&&(entry?entry.enabled===true:settings.executableWillLaunchAtLogin===true);
+   const registered=Boolean(entry);
+   const enabled=registered&&entry.enabled===true;
    return {supported:true,enabled,registered,message:registered&&!enabled?'Windows has disabled this startup item. Enable Spool Studio Bridge in Windows Startup apps.':enabled?'Starts in the tray when you sign in to Windows and reconnects automatically.':'Off — start the bridge manually.'};
   }catch{return {supported:false,enabled:false,registered:false,message:'Could not read Windows startup settings. No setting was changed.'}}
  }

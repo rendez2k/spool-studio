@@ -3,6 +3,19 @@ import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import {readFile} from 'node:fs/promises';
 
+test('startup failures stay beside the checkbox after background status updates',async()=>{
+ const nodes=new Map();
+ const node=id=>{if(!nodes.has(id))nodes.set(id,{textContent:'',dataset:{},setAttribute(){}});return nodes.get(id)};
+ const state={configured:true,checked:true,running:true,busy:false,startup:{supported:true,enabled:false,message:'Off'}};
+ let render;
+ vm.runInNewContext(await readFile('bridge-desktop/src/ui.js','utf8'),{document:{getElementById:node},window:{bridge:{subscribe:callback=>{render=callback},action:async action=>action==='status'?{ok:true,state}:{ok:false,state,error:'Windows could not confirm the startup setting.'}}},Date});
+ await new Promise(resolve=>setImmediate(resolve));
+ node('startup').checked=true;await node('startup').onchange();
+ assert.equal(node('startup').checked,false);assert.equal(node('startup').disabled,false);
+ assert.match(node('startup-status').textContent,/Windows could not confirm/);
+ render(state);assert.match(node('startup-status').textContent,/Windows could not confirm/);
+});
+
 test('desktop renderer places feedback beside Check and distinguishes checked from running',async()=>{
  const nodes=new Map();
  const node=id=>{

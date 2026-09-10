@@ -1,5 +1,5 @@
 'use strict';
-let pending=false;
+let pending=false,startupError='';
 const node=id=>document.getElementById(id);
 function render(state){
  node('origin').textContent=state.origin||'Not connected';node('printer').textContent=state.printerUrl||'Not configured';node('spoolman').textContent=state.spoolmanUrl||'Not linked';
@@ -15,11 +15,11 @@ function render(state){
  node('stop').disabled=!state.running&&!state.reconnecting;node('website').disabled=pending;
  node('startup-option').hidden=!state.startup?.supported;
  node('startup').checked=Boolean(state.startup?.enabled);node('startup').disabled=pending;
- node('startup-status').textContent=state.startup?.message||'';
+ node('startup-status').textContent=startupError||state.startup?.message||'';
 }
 async function act(action){
- pending=true;node('error').textContent='';
- try{const result=await window.bridge.action(action);pending=false;if(result.state)render(result.state);if(!result.ok)node('error').textContent=result.error}
+ pending=true;node('error').textContent='';if(action.startsWith('startup-'))startupError='';
+ try{const result=await window.bridge.action(action);pending=false;if(result.state)render(result.state);if(!result.ok){node('error').textContent=result.error;if(action.startsWith('startup-')){startupError=result.error;node('startup-status').textContent=startupError}}}
  catch{pending=false;node('error').textContent='The desktop bridge could not complete the action. Close and reopen it if this continues.'}
 }
 for(const id of ['import','check','start','stop','forget','website','help','quit']){

@@ -1,5 +1,14 @@
 [
   {
+    "version": "1.9.3",
+    "date": "2026-09-10",
+    "title": "Windows startup switch fixed",
+    "changes": [
+      "Bridge desktop beta 0.2.1 fixes the startup checkbox reverting to off even after Windows saved the setting, including installation paths containing spaces.",
+      "Startup changes return immediately while the printer connects in the background. Failures appear beside the switch. Install the desktop update; an existing enabled Windows entry is recognised automatically."
+    ]
+  },
+  {
     "version": "1.9.2",
     "date": "2026-09-10",
     "title": "Remember your Windows bridge",

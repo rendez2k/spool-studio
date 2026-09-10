@@ -67,7 +67,7 @@ else{
     }else if(action==='check'){if(controller.reconnecting)throw Error('Stop automatic reconnect first.');await controller.check()}
     else if(action==='start'){if(controller.reconnecting)throw Error('Stop automatic reconnect first.');await controller.start()}
     else if(action==='stop')controller.stop();
-    else if(action==='startup-enable'){startup.set(true);await controller.connectAutomatically()}
+    else if(action==='startup-enable'){startup.set(true);void controller.connectAutomatically()}
     else if(action==='startup-disable'){startup.set(false);controller.cancelReconnect()}
     else if(action==='forget'){
      if(controller.running||controller.busy||controller.reconnecting)throw Error('Stop the bridge first.');
@@ -78,7 +78,7 @@ else{
     else if(action==='quit'){quitting=true;controller.stop();app.quit()}
     else throw Error('Unknown action.');
     return {ok:true,state:snapshot()};
-   }catch{return {ok:false,error:'Could not complete that action. Check the configuration or startup settings, stop any active request, and try again.',state:snapshot()}}
+   }catch{return {ok:false,error:action==='startup-enable'||action==='startup-disable'?'Windows could not confirm the startup setting. Try again or check Spool Studio Bridge in Windows Settings → Apps → Startup.':'Could not complete that action. Check the configuration, stop any active request, and try again.',state:snapshot()}}
   });
   await window.loadURL(page);
   const automatic=startup.status().enabled&&Boolean(controller.config);
