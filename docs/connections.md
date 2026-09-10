@@ -40,6 +40,14 @@ Return the generated `spoolman-mappings-….private.json` to **Import completed 
 
 Hardware acceptance: note each SP number, Spoolman ID and loaded tool; record before/after weights around a small supervised single-tool print; verify that only the correct record changes in both systems; repeat sync to exclude double accounting; repeat for each tool before a multi-tool print. Estimates are not scale measurements.
 
+Read-only connection diagnosis (replace both addresses):
+
+```sh
+node scripts/spoolman-check.mjs http://printer-address http://spoolman-address:7912
+```
+
+For current paxx12 U1 firmware, prefer the built-in **SpoolLink** integration. Older `spoolman_multi_tool` includes can conflict with it. Confirm the actual spool before using Filament Manager or `SET_SPOOL_ID CHANNEL=<0–3> SPOOL_ID=<confirmed-id>`; this also binds the detected tag UID. A connected status alone does not prove correct per-tool consumption. See the [firmware's Spoolman documentation](https://github.com/paxx12-snapmaker-u1/SnapmakerU1-Extended-Firmware/blob/develop/docs/spoolman.md).
+
 ## External barcode catalogue
 
 The explicit UPCitemdb button queries its free trial lookup endpoint with a validated EAN/UPC/GTIN. It sends the code, not account data. No photos, offers or tracking images are rendered. Only exact returned code identities become reviewable drafts. Manufacturer SKUs stay local. Results may be absent, incomplete or wrong; this is not universal coverage.
@@ -64,6 +72,8 @@ The code and synthetic tests do not establish Google approval or real-mailbox re
 References: [Gmail scope classification](https://developers.google.com/workspace/gmail/api/auth/scopes), [browser token model](https://developers.google.com/identity/oauth2/web/guides/use-token-model).
 
 ## Privacy release checklist
+
+App & device → Your saved data downloads private JSON from the authenticated `/api/account-export` endpoint. It includes unfiltered stock, used reels, stable IDs, import fingerprints, and the latest phone batch, but no bridge key/hash or sign-in credentials. The two stored records retain separate revisions and are not an atomic restore snapshot. Reading an empty account does not create records. Clerk profile, support correspondence, provider logs and local-device data require separate access handling; the download is not claimed to fulfil every possible access request by itself.
 
 Operator confirmed by the owner: Robin Edwards, contact hello@productkit.digital.
 

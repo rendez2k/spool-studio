@@ -55,12 +55,14 @@ test("new connections keep Gmail gated, bridge credentials isolated and QR redir
  try{
   assert.equal((await app.run('/api/barcode-lookup',null,{code:'4002293401102',consent:true},{'oai-authenticated-user-id':'user_alice'})).status,401);
   assert.equal((await app.run('/api/gmail-config',null)).status,401);
+  assert.equal((await app.run('/api/account-export',null,null,{'oai-authenticated-user-id':'user_alice'})).status,401);
   assert.equal((await (await app.run('/api/gmail-config','alice')).json()).enabled,false);
   assert.equal((await app.run('/api/spoolman-sync','alice',{sequence:Date.now(),spools:[]})).status,401);
   let state=await (await app.run('/api/library','alice',{kind:'add',baseRevision:1,requestId:crypto.randomUUID(),spool})).json();
   state=await (await app.run('/api/library','alice',{kind:'initialise-reels',expectedAccountKey:'user_alice',baseRevision:state.revision,requestId:crypto.randomUUID()})).json();
   state=await (await app.run('/api/library','alice',{kind:'bridge-create',expectedAccountKey:'user_alice',baseRevision:state.revision,requestId:crypto.randomUUID()})).json();
   const credential=state.bridgeToken;
+  const exported=await app.run('/api/account-export','alice');assert.equal(exported.headers.get('netlify-cdn-cache-control'),'no-store');const copy=await exported.json();assert.equal(copy.library.items.length,1);assert.equal(copy.library.reels.length,2);assert(!JSON.stringify(copy).includes(credential));assert.equal((await (await app.run('/api/account-export','bob')).json()).library.items.length,0);
   const response=await serveNetlify(new Request(origin+'/api/spoolman-sync',{method:'POST',headers:{Authorization:'Bearer '+credential,'Content-Type':'application/json','oai-authenticated-user-id':'user_bob'},body:JSON.stringify({sequence:Date.now(),spools:[]})}),app.options);
   assert.equal(response.status,200);assert.equal(response.headers.get('netlify-cdn-cache-control'),'no-store');
   assert.equal((await app.run('/api/library',null,null,{authorization:'Bearer '+credential})).status,401);
