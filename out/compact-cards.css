@@ -8,7 +8,8 @@
   body.compact-cards #results .card-body { padding: 12px; }
   body.compact-cards #results .card h3 { margin-bottom: 4px; }
   body.compact-cards #results .roll-total { margin-top: 8px; font-size: 1.125rem; }
-  body.compact-cards #results .card-foot { margin-top: 10px; padding-top: 10px; }
+  body.compact-cards #results .card-body > .packaging { margin-bottom: 10px; }
+  body.compact-cards #results .card-foot { margin-top: auto; padding-top: 10px; }
   body.compact-cards #results .card-foot button { min-height: 44px; }
   body.compact-cards #results .family-colours { height: 32px; }
   body.compact-cards #results .family-details { margin-top: 8px; }
