@@ -32,7 +32,7 @@ export function renderReleaseHTML(content, releases) {
   if (!content.includes('<!-- APP_RELEASE_LINK -->') && !content.includes('<!-- RELEASE_NOTES -->')) return content;
   const version = releases[0].version;
   const link = '<a class="release-link" href="/whats-new.html#v' + version + '" target="_blank" rel="noopener" aria-label="Version ' + version + '. What’s new (opens in a new tab)" title="What’s new — opens in a new tab"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 10 14-5v14L3 14zM7 15l1 5h3l-1-4M21 9v6"/></svg><span>v' + version + '</span></a>';
-  return content.replace('</head>', '<meta name="app-display-version" content="' + version + '"><link rel="stylesheet" href="/release.css"></head>')
+  return content.replace('</head>', '<meta name="app-display-version" content="' + version + '"><link rel="stylesheet" href="/release.css"><script src="/release.js" defer></script></head>')
     .replaceAll('<!-- APP_RELEASE_LINK -->', link)
     .replace('<!-- RELEASE_NOTES -->', releases.map(release => '<section class="release-entry" id="v' + release.version + '"><h2>v' + release.version + ' · ' + escape(release.title) + '</h2><p class="release-date"><time datetime="' + release.date + '">' + escape(new Date(release.date + 'T12:00:00Z').toLocaleDateString('en-GB', {day:'numeric',month:'long',year:'numeric',timeZone:'UTC'})) + '</time></p><ul>' + release.changes.map(change => '<li>' + escape(change) + '</li>').join('') + '</ul></section>').join(''));
 }

@@ -33,6 +33,7 @@ test('builds embed the human release and escape notes, without account data or s
     assert(page.includes('name="app-display-version" content="' + info.displayVersion + '"'));
     assert(page.includes('>v' + info.displayVersion + '</span>'));
     assert(!page.includes('<!-- APP_RELEASE_LINK -->'));
+    assert(page.includes('<script src="/release.js" defer></script>'));
   }
   const notes = read('dist/netlify-public/whats-new.html');
   assert(notes.includes('id="v' + info.displayVersion + '"'));

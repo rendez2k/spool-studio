@@ -1,5 +1,13 @@
 [
   {
+    "version": "1.5.1",
+    "date": "2026-09-10",
+    "title": "A little nudge for new updates",
+    "changes": [
+      "The What’s New icon now highlights unread releases. Viewing the latest notes clears the highlight across tabs on this browser; a later release lights it up again, without refreshing your work."
+    ]
+  },
+  {
     "version": "1.5.0",
     "date": "2026-09-10",
     "title": "Your library, in living colour",
