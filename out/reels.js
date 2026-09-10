@@ -2,7 +2,7 @@
 {
  const node=id=>document.getElementById(id);let library=null,busy=false,selected=null,editRevision=null,page=0,pending=null,bridgeToken='';
  function controls(){node('reel-work').querySelectorAll('button,input').forEach(element=>element.disabled=busy);node('reel-initialise').hidden=Array.isArray(library?.reels);node('reel-init-help').hidden=Array.isArray(library?.reels);node('reel-weight').disabled=busy||Boolean(selected?.spoolmanId);node('bridge-create').disabled=busy||!Array.isArray(library?.reels);node('bridge-revoke').disabled=busy||!library?.bridge?.enabled}
- function clear(){selected=null;pending=null;bridgeToken='';node('bridge-download').hidden=true;node('reel-detail').hidden=true;node('reel-form').reset();node('reel-save-status').textContent='';for(const id of ['reel-title','reel-description','reel-weight-source','bridge-status'])node(id).textContent='';node('reel-link').removeAttribute('href');node('reel-list').replaceChildren();node('reel-search').value='';page=0}
+ function clear(){transferDraft=null;transferRead++;node('transfer-file').value='';node('transfer-apply').hidden=true;node('transfer-status').textContent='';selected=null;pending=null;bridgeToken='';node('bridge-download').hidden=true;node('reel-detail').hidden=true;node('reel-form').reset();node('reel-save-status').textContent='';for(const id of ['reel-title','reel-description','reel-weight-source','bridge-status'])node(id).textContent='';node('reel-link').removeAttribute('href');node('reel-list').replaceChildren();node('reel-search').value='';page=0}
  function render(){
   controls();const query=node('reel-search').value.trim().toLowerCase();const choices=(library?.reels||[]).map(reel=>({...reel,item:library.items.find(item=>item.id===reel.itemId)})).filter(reel=>reel.item&&(node('reel-show-used').checked||!reel.used)&&[SpoolReels.label(reel.number),reel.item.brand,reel.item.product,reel.item.colour,reel.location].join(' ').toLowerCase().includes(query));
   page=Math.min(page,Math.max(0,Math.ceil(choices.length/40)-1));node('reel-list').replaceChildren();
@@ -20,6 +20,25 @@
  node('reel-spoolman').oninput=()=>{node('reel-weight').disabled=busy||node('reel-spoolman').value!==''};
  node('reel-search').oninput=node('reel-show-used').onchange=()=>{page=0;render()};node('reel-prev').onclick=()=>{page--;render()};node('reel-next').onclick=()=>{page++;render()};
  node('bridge-create').onclick=()=>save({kind:'bridge-create'});node('bridge-revoke').onclick=()=>save({kind:'bridge-revoke'});
+ let transferDraft=null,transferRead=0;
+ function downloadTransfer(value,name){const url=URL.createObjectURL(new Blob([JSON.stringify(value,null,2)],{type:'application/json'}));const link=document.createElement('a');link.href=url;link.download=name;link.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
+ node('transfer-export').onclick=async()=>{
+  if(busy||!library)return;const account=library.accountKey;busy=true;controls();
+  try{const current=await request();apply(current);if(current.accountKey!==account)throw Error('The signed-in account changed. Review this library before exporting.');downloadTransfer(SpoolmanTransfer.manifest(current,location.origin),'spool-studio-transfer.private.json');node('transfer-status').textContent='Downloaded privately. Set density and diameter from the manufacturer specifications and confirm remaining grams before running the dry run.'}
+  catch(error){node('transfer-status').textContent=error.message}finally{busy=false;render()}
+ };
+ node('transfer-file').onchange=async()=>{
+  const sequence=++transferRead,file=node('transfer-file').files[0],account=library?.accountKey,revision=library?.revision;transferDraft=null;node('transfer-apply').hidden=true;
+  if(!file)return;
+  try{if(file.size>1000000)throw Error('The mapping file exceeds 1 MB.');const value=JSON.parse(await file.text());if(sequence!==transferRead)return;if(account!==library?.accountKey||revision!==library?.revision)throw Error('The library changed. Select the mapping file again.');const mappings=SpoolmanTransfer.mappings(value,library,location.origin);transferDraft={account,revision,mappings};node('transfer-status').textContent=mappings.length+' physical spool links ready. These links allow Spoolman estimates to update remaining weights. Your quantities and used marks are unchanged.';node('transfer-apply').hidden=false}
+  catch(error){if(sequence===transferRead)node('transfer-status').textContent=error.message}
+ };
+ node('transfer-apply').onclick=async()=>{
+  if(busy||!transferDraft)return;const draft=transferDraft;
+  if(draft.account!==library?.accountKey||draft.revision!==library?.revision){transferDraft=null;node('transfer-apply').hidden=true;node('transfer-status').textContent='The library changed. Select the mapping file again.';return}
+  await save({kind:'spoolman-mappings',reviewed:true,mappings:draft.mappings});
+  if(library?.accountKey===draft.account&&draft.mappings.every(mapping=>library.reels?.some(reel=>reel.id===mapping.id&&reel.spoolmanId===mapping.spoolmanId))){transferDraft=null;node('transfer-apply').hidden=true;node('transfer-status').textContent='Spoolman links saved. Create a bridge key below to sync weights.'}else node('transfer-status').textContent=node('reel-status').textContent;
+ };
  node('bridge-save-config').onclick=()=>{if(!bridgeToken||busy)return;const value={origin:location.origin,spoolmanUrl:'http://localhost:7912',token:bridgeToken};const url=URL.createObjectURL(new Blob([JSON.stringify(value,null,2)],{type:'application/json'}));const link=document.createElement('a');link.href=url;link.download='spool-studio-bridge.private.json';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000)};
  window.addEventListener('hashchange',()=>{if(qrId())open(qrId())});window.addEventListener('pagehide',()=>{bridgeToken='';node('bridge-download').hidden=true});refresh();
 }

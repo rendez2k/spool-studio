@@ -21,7 +21,22 @@ The bridge sends only numeric Spoolman IDs and absolute remaining grams. The clo
 
 The credential is not a Clerk session and cannot read the inventory, create spools, change mappings or operate a printer. Only its hash is stored by the app. Keep the downloaded secret private; replace/revoke it to invalidate copies. Never commit configuration files.
 
-Printer consumption reporting is a separate prerequisite. The U1 needs verified per-tool mappings before claiming automatic multi-tool tracking. No printer configuration, tool assignment or restart is performed by this bridge. An empty Spoolman library must first receive actual spool records; this release does not seed them automatically.
+Printer consumption reporting is a separate prerequisite. The U1 needs verified per-tool mappings before claiming automatic multi-tool tracking. No printer configuration, tool assignment or restart is performed by this bridge. An empty Spoolman library must first receive actual spool records, either manually or through the reviewed transfer below.
+
+### Transfer an existing library
+
+In Physical spools → Spoolman connection, choose **Export for Spoolman**. The private JSON contains available physical reels and filament specifications, not mailbox/order details, locations or bridge credentials. Unknown-quantity bundles and used-up reels are excluded. Edit `spoolmanUrl` if necessary. Fill each `materials` entry with manufacturer-confirmed `density` in g/cm³ and `diameter` in mm. For unusual blends, split the transfer into separate files with the appropriate profiles; do not assume every PLA blend shares a density. Confirm initial and remaining **net filament** grams; tare is not invented.
+
+```sh
+node scripts/spoolman-import.mjs "/path/to/spool-studio-transfer.private.json"
+node scripts/spoolman-import.mjs "/path/to/spool-studio-transfer.private.json" --apply
+```
+
+The first command is a dry run with no writes. Back up Spoolman and review the file and counts before using `--apply`. Only when **every unmeasured exported reel is full**, add `--assume-full` to use its initial weight. Otherwise enter measured/known remaining grams first. No manufacturer density, diameter or remaining weight is silently guessed.
+
+The importer creates tagged vendor/filament/spool records, reuses its exact permanent-reel markers on retry and never resets existing usage. It never calls a printer or a cloud endpoint. Do not run imports concurrently from different computers. A local lock prevents parallel CLI imports on one computer; after a crash, inspect processes before removing its temporary lock. On a failed write, created records remain in Spoolman: inspect them and rerun the same source to resume, rather than deleting valid records or changing markers. The mapping output is usable only after the command completes.
+
+Return the generated `spoolman-mappings-….private.json` to **Import completed Spoolman mappings**, review the count, then confirm. Site/account checks and atomic validation prevent foreign, duplicate, stale or conflicting links. Existing nonmatching links must be explicitly removed first. Linking does not change purchase quantities or current weights; the bridge supplies subsequent weight snapshots. Keep source and mapping files private and remove local copies when no longer needed.
 
 Hardware acceptance: note each SP number, Spoolman ID and loaded tool; record before/after weights around a small supervised single-tool print; verify that only the correct record changes in both systems; repeat sync to exclude double accounting; repeat for each tool before a multi-tool print. Estimates are not scale measurements.
 

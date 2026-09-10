@@ -10,17 +10,26 @@ function harness(){
  let state={accountKey:'user_alice',revision:2,items:[{id:'one',colour:'White',brand:'Example',product:'PLA'}],reels:[{id,number:1,itemId:'one',location:'',remainingGrams:null,used:false,spoolmanId:null}],bridge:{enabled:false}};
  const element=name=>({textContent:'',value:'',hidden:false,disabled:false,children:[],checked:false,reset(){},removeAttribute(key){delete this[key]},querySelectorAll(){return []},append(...values){this.children.push(...values)},replaceChildren(...values){this.children=values},setAttribute(){},focus(){focused=name},reportValidity(){return true}});
  const node=name=>{if(!nodes.has(name))nodes.set(name,element(name));return nodes.get(name)};
- const context={SpoolReels:core,document:{getElementById:node,createElement:()=>element('created')},window:{addEventListener(name,callback){events[name]=callback}},location:{origin:'https://test.example',hash:''},AbortSignal,crypto,Date,URL,Blob,setTimeout,
+ const context={SpoolReels:core,SpoolmanTransfer:createRequire(import.meta.url)('../out/spoolman-transfer.js'),document:{getElementById:node,createElement:()=>element('created')},window:{addEventListener(name,callback){events[name]=callback}},location:{origin:'https://test.example',hash:''},AbortSignal,crypto,Date,URL,Blob,setTimeout,
  fetch:async(url,options)=>{
   assert.equal(url,'/api/library');
   if(options.body){if(pauseSave)await pauseSave;if(fail)return Response.json({error:'Refresh before saving.'},{status:409});
-   const body=JSON.parse(options.body);assert.equal(body.expectedAccountKey,'user_alice');assert.equal(body.kind,'reel');state={...state,revision:state.revision+1,reels:[{...state.reels[0],...body.reel}]};
+   const body=JSON.parse(options.body);assert.equal(body.expectedAccountKey,'user_alice');assert(['reel','spoolman-mappings'].includes(body.kind));state={...state,revision:state.revision+1,reels:[{...state.reels[0],...(body.kind==='reel'?body.reel:{spoolmanId:body.mappings[0].spoolmanId})}]};
   }return Response.json(state);
  }};
  vm.runInNewContext(readFileSync(new URL('../out/reels.js',import.meta.url),'utf8'),context);
  return {node,context,events,id,get focused(){return focused},fail(){fail=true},pause(){pauseSave=new Promise(resolve=>{releaseSave=resolve})},release(){releaseSave()}};
 }
 const tick=()=>new Promise(resolve=>setImmediate(resolve));
+test('mapping file stages links without saving, rejects foreign accounts and saves only after confirmation',async()=>{
+ const app=harness();await tick();
+ const file={format:'spool-studio-mappings-v1',origin:'https://test.example',accountKey:'user_bob',mappings:[{id:app.id,spoolmanId:42}]};
+ app.node('transfer-file').files=[{size:500,text:async()=>JSON.stringify(file)}];await app.node('transfer-file').onchange();
+ assert.equal(app.node('transfer-apply').hidden,true);assert.match(app.node('transfer-status').textContent,/signed-in account/);
+ file.accountKey='user_alice';await app.node('transfer-file').onchange();assert.equal(app.node('transfer-apply').hidden,false);assert.match(app.node('transfer-status').textContent,/1 physical spool links ready/);
+ app.node('reel-list').children[0].onclick();assert.equal(app.node('reel-spoolman').value,'');
+ await app.node('transfer-apply').onclick();assert.equal(app.node('reel-spoolman').value,42);assert.equal(app.node('transfer-apply').hidden,true);assert.match(app.node('transfer-status').textContent,/links saved/);
+});
 test('reel page aligns its shell and keeps help text and touch targets usable',()=>{
  const css=readFileSync(new URL('../out/reels.css',import.meta.url),'utf8');
  assert.match(css,/header, main, footer\s*\{[^}]*width: 100%;[^}]*max-width: 1100px/);

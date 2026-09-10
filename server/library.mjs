@@ -1,6 +1,7 @@
 import { boundedJson } from "./api.mjs";
 import SpoolCatalog from "../out/spool-catalog.js";
 import {addReels, initialiseReels, updateReel, updateItemStatus, tokenHash} from './reels.mjs';
+import {linkSpoolman} from './spoolman-mapping.mjs';
 
 const materials = ["PLA", "PLA+", "PETG", "ABS", "ASA", "TPU", "PA", "PC", "PVA", "HIPS", "Other"];
 const finishes = ["standard", "matte", "silk", "marble", "sparkle", "wood", "glow", "satin", "metal", "unknown"];
@@ -62,7 +63,7 @@ export async function handleLibrary(request, env) {
       if (!Number.isSafeInteger(input.baseRevision) || input.baseRevision < 1 || typeof input.requestId !== "string" || !/^[a-zA-Z0-9-]{16,64}$/.test(input.requestId)) throw Error("Invalid library request.");
     } catch (error) { return json({ error: error.message }, 400); }
     if (input.kind === "import" && input.expectedAccountKey !== userId) return json({ error: "The signed-in account changed. Reopen the importer before saving." }, 409);
-    if (['reel','initialise-reels','bridge-create','bridge-revoke'].includes(input.kind) && input.expectedAccountKey !== userId) return json({error:'The signed-in account changed. Refresh before saving.'},409);
+    if (['reel','initialise-reels','bridge-create','bridge-revoke','spoolman-mappings'].includes(input.kind) && input.expectedAccountKey !== userId) return json({error:'The signed-in account changed. Refresh before saving.'},409);
     const row = await getLibrary(env.DB, userId);
     if (row.request_id === input.requestId) return json(libraryView(row, userId));
     if (row.revision !== input.baseRevision) return json({ error: "Your library changed elsewhere. Refresh the library, then try again; your form has been kept." }, 409);
@@ -73,6 +74,9 @@ export async function handleLibrary(request, env) {
         initialiseReels(data);
       } else if (input.kind === 'reel') {
         updateReel(data, input.reel);
+      } else if (input.kind === 'spoolman-mappings') {
+        if (input.reviewed !== true) throw Error('Review the Spoolman mappings before linking.');
+        linkSpoolman(data, input.mappings);
       } else if (input.kind === 'bridge-create') {
         if (!Array.isArray(data.reels)) throw Error('Assign permanent spool IDs first.');
         bridgeToken = btoa(userId) + '.' + crypto.randomUUID() + crypto.randomUUID();

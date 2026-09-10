@@ -11,7 +11,7 @@ export function configuration(value) {
   return {origin: origin.origin, spoolmanUrl: spoolman.origin, token: value.token};
 }
 
-async function jsonResponse(response, limit) {
+export async function jsonResponse(response, limit) {
   if (!response.ok) throw Error('Request failed (' + response.status + ').');
   const reader = response.body.getReader();
   const chunks = []; let size = 0;
