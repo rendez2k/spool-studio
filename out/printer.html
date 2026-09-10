@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en-GB"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer"><title>Send to printer · Spool Studio</title><link rel="stylesheet" href="/import.css"><link rel="stylesheet" href="/brand.css"><link rel="stylesheet" href="/printer.css"><link rel="icon" href="/icons/filament-32.png"><link rel="manifest" href="/app.webmanifest" crossorigin="use-credentials"><script src="/printer-core.js" defer></script><script src="/printer.js" defer></script><script src="/pwa.js" defer></script></head>
+<body><header><a class="studio-brand" href="/"><img src="/icons/filament.svg" width="36" height="36" alt=""><span>Spool Studio</span></a><a href="/">Library</a></header><main>
+<div class="release-heading"><h1>Send to printer</h1><!-- APP_RELEASE_LINK --></div>
+<p class="intro">Your filament, on the right tool. No NFC tag needed.</p>
+<p class="hint">Works from iPhone, Android or desktop through your local bridge. Sends generic material, finish and colour—not temperatures, heating commands or a print job. A later tag scan or slicer job may replace these settings.</p>
+<p id="printer-status" role="status">Checking your connection…</p><button id="printer-refresh" type="button">Refresh status</button>
+<section id="printer-work" hidden>
+<div class="printer-layout"><section aria-labelledby="filament-heading"><h2 id="filament-heading">Choose your filament</h2>
+<label for="printer-search">Find in your library</label><input id="printer-search" type="search" placeholder="Colour, brand or type">
+<label for="printer-item">Library entry</label><select id="printer-item"></select>
+<label for="printer-reel">Physical reel (optional)</label><select id="printer-reel"><option value="">Material and colour only</option></select>
+<label class="check"><input id="printer-link" type="checkbox"><span>Also assign this reel’s existing Spoolman ID</span></label>
+<p class="hint">Requires a mapped physical reel and the same Spoolman server. This does not create a Spoolman record or measure consumption. Existing RFID-to-spool associations may be updated by the printer.</p>
+<p id="printer-profile"></p></section>
+<section aria-labelledby="tool-heading"><h2 id="tool-heading">Choose a U1 tool</h2><div id="printer-tools" role="group" aria-label="Printer tools"></div>
+<button id="printer-review" type="button">Review change</button>
+<section id="printer-confirm" hidden aria-labelledby="confirm-heading"><h3 id="confirm-heading" tabindex="-1">Review before sending</h3><p id="printer-before"></p><p id="printer-after"></p><p id="printer-assignment"></p>
+<label class="check"><input id="printer-approve" type="checkbox"><span>This is the reel loaded in this tool. I have checked the material, finish, colour and tracking change.</span></label>
+<button id="printer-send" type="button" class="primary" disabled>Send to printer</button></section>
+</section></div>
+<section class="printer-result" aria-labelledby="result-heading"><h2 id="result-heading">Latest request</h2><p id="printer-result" role="status">Nothing sent yet.</p><button id="printer-cancel" type="button" hidden>Cancel waiting request</button></section>
+</section>
+<details id="printer-setup"><summary>Local bridge setup</summary><p>A computer on your printer’s network must keep the bridge running. It makes outbound connections only; do not forward printer ports or expose Moonraker to the internet.</p>
+<p>This printer key is separate from your weight-sync key. Replacing or revoking it stops new requests, but cannot recall a command already sent to the printer.</p>
+<div class="actions"><button id="printer-create" type="button">Create / replace printer key</button><button id="printer-revoke" type="button">Revoke printer key</button></div>
+<section id="printer-download" hidden><label for="printer-address">Local printer address</label><input id="printer-address" type="url" placeholder="http://192.168.1.26"><label for="printer-spoolman-address">Spoolman address (optional; must match printer configuration)</label><input id="printer-spoolman-address" type="url" placeholder="http://192.168.1.99:7912"><button id="printer-download-button" type="button">Download private printer configuration</button><p class="hint">Contains a secret key and enables reviewed metadata writes. Keep it private; never commit it to GitHub.</p></section>
+<p>In your local <a href="https://github.com/rendez2k/spool-studio">Spool Studio repository</a>, using Node.js 22 or newer:</p><pre>npm ci
+node scripts/printer-bridge.mjs "path/to/spool-studio-printer.private.json" --check
+node scripts/printer-bridge.mjs "path/to/spool-studio-printer.private.json"</pre><p><code>--check</code> is read-only. The second command waits for your reviewed app requests. Stop it with Ctrl+C.</p><p><a href="/guide.html#send-to-printer">Setup, safety and tracking guide</a></p>
+</details><p id="printer-message" role="status"></p></main><footer><a href="/app.html">App &amp; device</a> · <a href="/privacy.html">Privacy</a> · <a href="/contact.html">Contact</a></footer></body></html>

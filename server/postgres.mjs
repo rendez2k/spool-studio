@@ -19,7 +19,7 @@ export function postgresDatabase(client) {
       try {return await eraseSavedData(connection, input);} finally {connection.release();}
     },
     prepare(statement) {
-      if (!/^(SELECT|INSERT INTO|UPDATE) /.test(statement) || !/\b(libraries|phone_batches|service_limits)\b/.test(statement)) throw Error("Unsupported inventory query.");
+      if (!/^(SELECT|INSERT INTO|UPDATE) /.test(statement) || !/\b(libraries|phone_batches|service_limits|printer_connections)\b/.test(statement)) throw Error("Unsupported inventory query.");
       let position = 0;
       const query = statement.replaceAll("?", () => "$" + ++position);
       return {

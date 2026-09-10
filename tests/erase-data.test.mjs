@@ -7,11 +7,12 @@ import {postgresDatabase} from '../server/postgres.mjs';
 import {handleLibrary} from '../server/library.mjs';
 import {handleBatch} from '../server/api.mjs';
 async function fixture() {
- const database=new PGlite();await database.exec(await readFile(new URL('../netlify/database/migrations/001_create-inventory/migration.sql',import.meta.url),'utf8'));
+ const database=new PGlite();await database.exec(await readFile(new URL('../netlify/database/migrations/001_create-inventory/migration.sql',import.meta.url),'utf8'));await database.exec(await readFile(new URL('../netlify/database/migrations/003_printer-connections/migration.sql',import.meta.url),'utf8'));
  const client={async query(sql,params){const result=await database.query(sql,params);return {rows:result.rows,rowCount:result.affectedRows}},release(){},async connect(){return this}};
  for(const account of ['user_alice','user_bob']){
   await client.query("INSERT INTO libraries VALUES ($1, 5, $2, 'old-request', '2026-09-10')",[account,JSON.stringify({items:[{id:account,spools:1}],reels:[{id:crypto.randomUUID(),number:18}],nextReelNumber:19,importHashes:['private'],bridgeHash:'revocable-key'})]);
   await client.query("INSERT INTO phone_batches VALUES ($1, 4, $2, 'old-request', '2026-09-10')",[account,JSON.stringify({p:'old project',state:'empty',total:0,chosen:0,selection:null})]);
+  await client.query('INSERT INTO printer_connections VALUES ($1, 7, $2)',[account,JSON.stringify({hash:'printer-key-hash',request:{state:'queued'}})]);
  }
  return {database,client,DB:postgresDatabase(client),input:{accountKey:'user_alice',libraryRevision:5,phoneRevision:4,requestId:crypto.randomUUID()}};
 }
@@ -21,6 +22,8 @@ test('erasure atomically removes saved content and bridge credentials, retains c
   assert.deepEqual(await eraseSavedData(app.client,app.input),first);
   const library=(await app.client.query('SELECT payload FROM libraries WHERE user_id=$1',['user_alice'])).rows[0];assert.deepEqual(JSON.parse(library.payload),{items:[],nextReelNumber:19});
   assert.equal(JSON.parse((await app.client.query('SELECT payload FROM libraries WHERE user_id=$1',['user_bob'])).rows[0].payload).items.length,1);
+  const printer=(await app.client.query('SELECT revision,payload FROM printer_connections WHERE user_id=$1',['user_alice'])).rows[0];assert.equal(printer.revision,8);assert.deepEqual(JSON.parse(printer.payload),{});
+  assert.equal(JSON.parse((await app.client.query('SELECT payload FROM printer_connections WHERE user_id=$1',['user_bob'])).rows[0].payload).hash,'printer-key-hash');
   const headers={'oai-authenticated-user-id':'user_alice',origin:'https://test.example','content-type':'application/json'};
   const stale=await handleLibrary(new Request('https://test.example/api/library',{method:'POST',headers,body:JSON.stringify({kind:'initialise-reels',expectedAccountKey:'user_alice',baseRevision:5,requestId:crypto.randomUUID()})}),{DB:app.DB});assert.equal(stale.status,409);
   const staleBatch=await handleBatch(new Request('https://test.example/api/phone-batch',{method:'PUT',headers,body:JSON.stringify({baseRevision:4,requestId:crypto.randomUUID(),batch:{p:'resurrect',state:'empty',total:0,chosen:0,selection:null}})}),{DB:app.DB});assert.equal(staleBatch.status,409);

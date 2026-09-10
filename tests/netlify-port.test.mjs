@@ -11,7 +11,7 @@ const spool = { brand: "Test", product: "Matte PLA", material: "PLA", finish: "m
 
 async function harness() {
   const postgres = new PGlite();
-  await postgres.exec(await readFile("netlify/database/migrations/001_create-inventory/migration.sql", "utf8"));
+  await postgres.exec(await readFile("netlify/database/migrations/001_create-inventory/migration.sql", "utf8"));await postgres.exec(await readFile("netlify/database/migrations/003_printer-connections/migration.sql", "utf8"));
   await postgres.exec(await readFile("netlify/database/migrations/002_barcode-budget/migration.sql", "utf8"));
   const database = postgresDatabase({ async query(query, values) {
     const result = await postgres.query(query, values);

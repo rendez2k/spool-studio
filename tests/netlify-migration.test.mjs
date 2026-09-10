@@ -17,7 +17,7 @@ function source(overrides = {}) {
 test("migration preserves exact payload, IDs and used state, retries safely and never replaces edited stock", async () => {
   const database = new PGlite();
   try {
-    await database.exec(await readFile("netlify/database/migrations/001_create-inventory/migration.sql", "utf8"));
+    await database.exec(await readFile("netlify/database/migrations/001_create-inventory/migration.sql", "utf8"));await database.exec(await readFile("netlify/database/migrations/003_printer-connections/migration.sql", "utf8"));
     const inspection = inspectMigration(source());
     assert.equal(inspection.summary.entries, 2);
     assert.equal(inspection.summary.usedEntries, 1);

@@ -10,6 +10,7 @@ export async function eraseSavedData(client, {accountKey, libraryRevision, phone
     const library = (await client.query('SELECT revision, payload, request_id FROM libraries WHERE user_id = $1 FOR UPDATE', [accountKey])).rows[0];
     const createdBatch = await client.query("INSERT INTO phone_batches (user_id, revision, payload, request_id, updated_at) VALUES ($1, 1, $2, '', $3) ON CONFLICT(user_id) DO NOTHING", [accountKey, emptyBatch, now]);
     const batch = (await client.query('SELECT revision, request_id FROM phone_batches WHERE user_id = $1 FOR UPDATE', [accountKey])).rows[0];
+    await client.query("INSERT INTO printer_connections (user_id, revision, payload) VALUES ($1, 1, '{}') ON CONFLICT(user_id) DO NOTHING", [accountKey]);
     if (library.request_id === erasureId && batch.request_id === erasureId) {
       await client.query('COMMIT');
       return {cleared: true, libraryRevision: library.revision, phoneRevision: batch.revision};
@@ -19,6 +20,7 @@ export async function eraseSavedData(client, {accountKey, libraryRevision, phone
     const nextReelNumber = Number.isSafeInteger(previous.nextReelNumber) && previous.nextReelNumber > 0 ? previous.nextReelNumber : 1;
     await client.query('UPDATE libraries SET revision = revision + 1, payload = $1, request_id = $2, updated_at = $3 WHERE user_id = $4', [JSON.stringify({items: [], nextReelNumber}), erasureId, now, accountKey]);
     await client.query('UPDATE phone_batches SET revision = revision + 1, payload = $1, request_id = $2, updated_at = $3 WHERE user_id = $4', [emptyBatch, erasureId, now, accountKey]);
+    await client.query("UPDATE printer_connections SET revision = revision + 1, payload = '{}' WHERE user_id = $1", [accountKey]);
     await client.query('COMMIT');
     return {cleared: true, libraryRevision: library.revision + 1, phoneRevision: batch.revision + 1};
   } catch (error) {await client.query('ROLLBACK'); throw error;}

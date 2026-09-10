@@ -1,5 +1,14 @@
 [
   {
+    "version": "1.7.0",
+    "date": "2026-09-10",
+    "title": "Send filament to your U1, without a tag",
+    "changes": [
+      "Send to printer lets you choose a library filament and tool 1–4, review the change and verify printer read-back. Works from iPhone, Android and desktop through a separately configured local bridge.",
+      "Optional assignment of an already-mapped physical reel to Spoolman, with material/colour and duplicate-tool checks. Colour-only sends explicitly clear old tracking assignments. Busy printers, expired reviews and unsupported metadata fail closed; printer commands are never retried automatically. No temperatures, heating, motion or print jobs are sent."
+    ]
+  },
+  {
     "version": "1.6.0",
     "date": "2026-09-10",
     "title": "A calmer way to import",

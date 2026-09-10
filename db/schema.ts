@@ -21,3 +21,9 @@ export const serviceLimits = sqliteTable("service_limits", {
   revision: integer("revision").notNull(),
   payload: text("payload").notNull(),
 });
+
+export const printerConnections = sqliteTable("printer_connections", {
+  userId: text("user_id").primaryKey(),
+  revision: integer("revision").notNull(),
+  payload: text("payload").notNull(),
+});
