@@ -25,7 +25,7 @@ class BridgeController {
    const status=await this.core.inspectPrinter(this.config);
    this.checked=status.supported;this.lastContact=new Date().toISOString();
    this.checkState=!status.supported?'unsupported':status.ready?'ready':'busy';
-   this.message=!status.supported?'Printer reached, but not supported. The required U1 firmware command is unavailable.':status.ready?'Check passed — printer connected and idle. You can start the bridge.':'Check passed — printer connected, but not idle. You can start the bridge; settings changes remain blocked.';
+   this.message=!status.supported?'Printer reached, but not supported. The required U1 firmware command is unavailable.':status.ready?'Check passed — printer connected and idle. You can start the bridge.':'Check passed — printer connected, but not idle. Settings changes stay blocked.';
   }catch{this.checkState='error';this.message='Connection failed — could not check the printer. Check its IP, Moonraker port, network and API key, then try again.'}
   finally{this.checkMessage=this.message;this.busy=false;this.emit()}
   return this.status();
