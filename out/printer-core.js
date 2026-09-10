@@ -2,7 +2,13 @@
  'use strict';
  const materials=['PLA','PETG','ABS','ASA','TPU','PA','PC','PVA','HIPS'];
  function profile(item){
-  const subtype={standard:'Basic',matte:'Matte',silk:'Silk'}[item?.finish];
+  let finish=item?.finish;
+  if(!finish){
+   const product=String(item?.product||'').trim().toLowerCase().replace(/^bambu(?: lab)?\s+/,'').replace(/\s+/g,' ');
+   const material=String(item?.material||'').toLowerCase();
+   for(const [label,kind] of Object.entries({basic:'standard',standard:'standard',normal:'standard',matt:'matte',matte:'matte',silk:'silk'}))if(product===material+' '+label||product===label+' '+material)finish=kind;
+  }
+  const subtype={standard:'Basic',matte:'Matte',silk:'Silk'}[finish];
   if(!materials.includes(item?.material)||!subtype||!/^#[a-f0-9]{6}$/i.test(item?.hex||''))throw Error('This filament needs a supported material, standard/matte/silk finish and a valid colour before sending. PLA+ and unknown blends are not silently substituted.');
   return {vendor:'Generic',material:item.material,subtype,rgba:item.hex.slice(1).toUpperCase()+'FF'};
  }

@@ -17,7 +17,7 @@ node scripts/printer-bridge.mjs "path/to/spool-studio-printer.private.json"
 
 The bridge checks the printer's actual `gcode.commands`, not just `/printer/gcode/help` (which may omit commands with no help text). It requires `SET_PRINT_FILAMENT_CONFIG` and the four `print_task_config` metadata arrays. Tool 1 corresponds to channel 0. The current implementation intentionally does not use the ACE-specific `SET_FILAMENT_CONFIG` command or invent its temperature/weight parameters.
 
-Only explicit PLA, PETG, ABS, ASA, TPU, PA, PC, PVA or HIPS with standard, matte or silk finish and a valid single-colour hex can be sent. PLA+, unknown materials/finishes and special blends are not silently converted. A generic metadata label is not evidence of nozzle, dryer, feeder or material compatibility.
+Only explicit PLA, PETG, ABS, ASA, TPU, PA, PC, PVA or HIPS with standard, matte or silk finish and a valid single-colour hex can be sent. Older imports without a finish field can infer it from an exact product name such as PLA Basic or PLA Matte; saved finish choices are never overridden. PLA+, unknown materials/finishes and special blends are not silently converted. A generic metadata label is not evidence of nozzle, dryer, feeder or material compatibility.
 
 Protocol references: [U1-RFID command implementation](https://github.com/DnG-Crafts/U1-RFID/blob/main/Android/U1RFID/app/src/main/java/dngsoftware/u1rfid/Utils.java), [paxx12 filament UI](https://github.com/paxx12-snapmaker-u1/SnapmakerU1-Extended-Firmware/blob/develop/overlays/firmware-extended/68-app-filament-ui/root/usr/local/filament-ui/html/script.js), [SpoolLink commands](https://github.com/paxx12-snapmaker-u1/SnapmakerU1-Extended-Firmware/blob/develop/docs/spoolman.md).
 

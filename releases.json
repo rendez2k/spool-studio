@@ -1,5 +1,13 @@
 [
   {
+    "version": "1.7.1",
+    "date": "2026-09-10",
+    "title": "Printer support for older imports",
+    "changes": [
+      "Older library entries with explicit Basic, Standard, Matte or Silk product names can use Send to printer without re-entering their finish. Saved finish choices stay unchanged; ambiguous product names still require review."
+    ]
+  },
+  {
     "version": "1.7.0",
     "date": "2026-09-10",
     "title": "Send filament to your U1, without a tag",

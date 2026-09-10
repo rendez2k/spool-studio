@@ -90,6 +90,14 @@ test('bridge configuration is explicit, outbound only, and does not silently ena
  assert.throws(()=>Core.profile({...item,material:'PLA+'}));assert.throws(()=>Core.profile({...item,finish:'unknown'}));
 });
 
+test('legacy imports infer only explicit product finishes without overriding saved decisions',()=>{
+ assert.equal(Core.profile({...item,finish:undefined,product:'PLA Matte'}).subtype,'Matte');
+ assert.equal(Core.profile({...item,finish:undefined,product:'Bambu PLA Basic'}).subtype,'Basic');
+ assert.equal(Core.profile({...item,finish:'standard',product:'PLA Matte'}).subtype,'Basic');
+ for(const product of ['PLA','PLA Mystery','PLA Matte Gradient','PLA Matte-CF'])assert.throws(()=>Core.profile({...item,finish:undefined,product}));
+ assert.throws(()=>Core.profile({...item,finish:'unknown',product:'PLA Matte'}));
+});
+
 test('a changed Spoolman mapping cannot replace the ID approved in the review',async()=>{
  const app=await setup();try{
   const reel={id:crypto.randomUUID(),itemId:item.id,number:1,spoolmanId:5};
