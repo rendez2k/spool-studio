@@ -24,7 +24,7 @@
   if(quoted)throw Error('A quoted CSV field is not closed.');
   endRecord();
   const header=records.shift();
-  if(!header||new Set(header).size!==header.length||header.some(key=>![...columns,'costPerRoll','costCurrency'].includes(key))||columns.slice(0,-1).some(key=>!header.includes(key)))throw Error('Use the CSV template headers exactly: '+columns.join(',')+'. Optional: costPerRoll,costCurrency.');
+  if(!header||new Set(header).size!==header.length||header.some(key=>![...columns,'costPerRoll','costCurrency','entryId','order','retailer'].includes(key))||columns.slice(0,-1).some(key=>!header.includes(key)))throw Error('Use the CSV template headers exactly: '+columns.join(',')+'. Optional: costPerRoll,costCurrency,entryId,order,retailer.');
   return records.map((record,index)=>{
    if(record.length!==header.length)throw Error('CSV entry '+(index+1)+' has the wrong number of columns. Quote values containing commas.');
    if(record.some(value=>/^[=+@-]/.test(value)))throw Error('CSV entry '+(index+1)+' contains a formula-like value. Export plain values, not spreadsheet formulas.');
@@ -34,8 +34,8 @@
     if(spool.costPerRoll&&!/^\d+(?:\.\d{1,2})?$/.test(spool.costPerRoll))throw Error('Entry '+(index+1)+': use a plain decimal cost per roll, not a currency symbol or line total.');
     Object.assign(spool,costing.fields({costPerRoll:spool.costPerRoll?Number(spool.costPerRoll):null,costCurrency:spool.costCurrency||''}));
    }
-   const limits={brand:80,product:100,colour:80,notes:500};
-   for(const [key,max] of Object.entries(limits))if(spool[key].length>max)throw Error('Entry '+(index+1)+': '+key+' exceeds '+max+' characters.');
+   const limits={brand:80,product:100,colour:80,notes:500,entryId:160,order:120,retailer:100};
+   for(const [key,max] of Object.entries(limits))if((spool[key]||'').length>max)throw Error('Entry '+(index+1)+': '+key+' exceeds '+max+' characters.');
    for(const [key,max] of [['spools',500],['weightGrams',10000]]){
     if(spool[key]!==''&&(!/^\d+$/.test(spool[key])||Number(spool[key])<1||Number(spool[key])>max))throw Error('Entry '+(index+1)+': '+key+' must be a whole number from 1 to '+max+', or blank.');
     spool[key]=spool[key]===''?null:Number(spool[key]);

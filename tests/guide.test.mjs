@@ -10,7 +10,7 @@ test('guide is public, its local routes and anchors resolve, and it adds no perm
  const response=await worker.fetch(new Request('https://test.example/guide.html'),{});
  assert.equal(response.status,200);assert.match(response.headers.get('content-type'),/text\/html/);
  const html=await response.text();
- assert.doesNotMatch(html,/<script|<form|type="checkbox"/i);
+ assert.doesNotMatch(html.replace('<script src="/setup-core.js"></script>','').replace('<script src="/setup-flow.js"></script>',''),/<script|<form|type="checkbox"/i);
  for(const [,anchor] of html.matchAll(/href="#([^"]+)"/g))assert(html.includes('id="'+anchor+'"'));
  for(const [,path] of html.matchAll(/(?:href|src)="(\/[^"#]+)(?:#[^"]*)?"/g)){
   const result=await worker.fetch(new Request('https://test.example'+path),{});

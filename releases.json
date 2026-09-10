@@ -1,5 +1,14 @@
 [
   {
+    "version": "1.4.0",
+    "date": "2026-09-10",
+    "title": "Enrich costs, keep your place",
+    "changes": [
+      "Update existing costs only: review imported prices against their original purchases without adding stock or changing roll counts, permanent IDs or used marks. Existing prices require explicit replacement confirmation.",
+      "Setup stays with you: feature pages show a return-to-checklist bar that brings you back to the same step."
+    ]
+  },
+  {
     "version": "1.3.0",
     "date": "2026-09-10",
     "title": "Welcome to your workshop",

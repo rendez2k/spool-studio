@@ -48,11 +48,11 @@ function element(tag='div'){
  };
 }
 const flush=()=>new Promise(resolve=>setImmediate(resolve));
-async function harness(){
+async function harness(href='https://test.example/welcome.html'){
  const nodes=new Map(),events={},posts=[],DB=localDatabase();let user='alice',drop=false,fail=false,defer=null;
  const get=id=>{if(!nodes.has(id))nodes.set(id,element());return nodes.get(id)};
  get('setup-dismiss').tag='input';get('setup-refresh').tag='button';get('setup-work').append(get('setup-steps'),get('setup-dismiss'),get('setup-refresh'));
- const context={SpoolSetup:setup,document:{getElementById:get,createElement:element},window:{addEventListener:(name,fn)=>events[name]=fn},AbortSignal,crypto,URL,
+ const context={location:{href},SpoolSetup:setup,document:{getElementById:get,createElement:element},window:{addEventListener:(name,fn)=>events[name]=fn},AbortSignal,crypto,URL,
   fetch:async(url,options)=>{assert.equal(url,'/api/library');assert.equal(options.credentials,'same-origin');const body=options.body?JSON.parse(options.body):null;if(body)posts.push(body);if(defer)await new Promise(resolve=>defer(resolve));if(fail)return Response.json({error:'Offline'},{status:503});const result=await handleLibrary(request(user,body),{DB});if(body&&drop){drop=false;throw Error('Reply lost')}return result}
  };
  vm.runInNewContext(readFileSync(new URL('../out/welcome.js',import.meta.url),'utf8'),context);await flush();
@@ -99,5 +99,25 @@ test('library welcome reminder is optional and setup links open views without cr
   get('setup-hide').onclick();assert.equal(writes[0].kind,'setup');assert.equal(writes[0].expectedAccountKey,'alice');
   context.dataset.setup={dismissed:true};context.window.SetupReminder.update();assert.equal(get('setup-reminder').hidden,true);
   context.dataset.status='signedout';context.window.SetupReminder.update();assert.equal(get('setup-reminder').hidden,true);
+ }
+});
+test('setup feature links retain context and the return opens the original step without marking it done',async()=>{
+ const app=await harness('https://test.example/welcome.html?step=match#setup-match');
+ try{
+  const details=app.get('setup-steps').children,match=details.find(detail=>detail.dataset.step==='match');
+  assert.equal(match.open,true);assert.equal(details.find(detail=>detail.dataset.step==='library').open,false);
+  const link=match.querySelectorAll('*').find(child=>child.tag==='a');
+  assert.equal(link.href,'/?setup=match&setupStep=match');assert.equal(app.posts.length,0);
+  assert.match(app.get('setup-progress').textContent,/0 of 6 done/);
+ }finally{app.DB.close()}
+});
+
+test('feature setup bar returns to the exact step, exits without saving, and rejects unknown context',()=>{
+ for(const step of ['match','nfc','not-valid']){
+  const main=element('main'),history=[];main.prepend=node=>main.children.unshift(node);
+  const create=tag=>{const node=element(tag);node.setAttribute=()=>{};node.remove=()=>main.children.splice(main.children.indexOf(node),1);return node};
+  vm.runInNewContext(readFileSync(new URL('../out/setup-flow.js',import.meta.url),'utf8'),{SpoolSetup:setup,URL,location:{href:'https://test.example/?setupStep='+step},history:{replaceState:(...args)=>history.push(args)},document:{createElement:create,querySelector:()=>main}});
+  if(step==='not-valid'){assert.equal(main.children.length,0);continue}
+  const banner=main.children[0];assert.equal(banner.children[1].href,'/welcome.html?step='+step+'#setup-'+step);banner.children[2].onclick();assert.equal(main.children.length,0);assert.equal(history[0][2],'/');
  }
 });

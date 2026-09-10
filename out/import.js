@@ -1,19 +1,19 @@
 'use strict';
 const get=id=>document.getElementById(id);
 let library=null,rows=[],sourceSnapshot='',imageFile=null,imageUrl='',worker=null,reading=false,saving=false,runId=0,accountCheck=0,scriptPromise=null,pendingSave=null;
-let snapshotFormat='text';
+let snapshotFormat='text';const costsOnly=()=>get('import-mode').value==='costs';
 let reviewPage=0;
 const reviewPageSize=20;
 const materialOptions=['PLA','PLA+','PETG','ABS','ASA','TPU','PA','PC','PVA','HIPS','Other'];
 const finishOptions=['unknown','standard','matte','silk','marble','sparkle','wood','glow','satin','metal'];
-const fields=[['brand','Brand'],['product','Product / type'],['material','Material'],['finish','Finish'],['colour','Colour name'],['hex','Colour hex'],['spools','Number of rolls'],['weightGrams','Grams per roll'],['costPerRoll','Cost per roll (not line total)'],['costCurrency','Cost currency (GBP, EUR, USD…)'],['packaging','Packaging'],['date','Purchase / added date'],['notes','Notes / uncertainties']];
+const fields=[['brand','Brand'],['product','Product / type'],['material','Material'],['finish','Finish'],['colour','Colour name'],['hex','Colour hex'],['spools','Number of rolls'],['weightGrams','Grams per roll'],['costPerRoll','Cost per roll (not line total)'],['costCurrency','Cost currency (GBP, EUR, USD…)'],['order','Order number (optional)'],['retailer','Retailer (optional)'],['packaging','Packaging'],['date','Purchase / added date'],['notes','Notes / uncertainties']];
 function today(){const date=new Date();return [date.getFullYear(),String(date.getMonth()+1).padStart(2,'0'),String(date.getDate()).padStart(2,'0')].join('-')}
 function message(text){get('import-message').textContent=text}
 function changed(){get('approve-import').checked=false;pendingSave=null;controls()}
 function controls(){
- const ready=Boolean(library)&&!saving;
+ const ready=Boolean(library)&&!saving;get('review-form').noValidate=costsOnly();
  get('read-image').disabled=!ready||reading||!imageFile||get('source-format').value==='csv';
- get('source-csv').disabled=!ready||reading;get('source-format').disabled=!ready||reading;
+ get('import-mode').disabled=!ready||reading;get('source-csv').disabled=!ready||reading;get('source-format').disabled=!ready||reading;
  get('cancel-read').hidden=!reading;get('source-image').disabled=!ready||reading;
  for(const id of ['extract','add-blank','clear-import'])get(id).disabled=!ready||reading;
  get('source-text').disabled=!ready||reading;
@@ -24,11 +24,16 @@ function controls(){
  get('review-page').disabled=!ready||reading;
  get('review-footer').hidden=!rows.length;
  const selected=rows.filter(row=>row.selected).length;
- get('save-import').textContent=saving?'Saving…':'Add '+selected+' selected entr'+(selected===1?'y':'ies');
+ get('save-import').textContent=saving?'Saving…':costsOnly()?'Update '+selected+' selected cost'+(selected===1?'':'s'):'Add '+selected+' selected entr'+(selected===1?'y':'ies');
  get('save-import').disabled=!ready||reading||!selected||!get('approve-import').checked||get('source-text').value!==sourceSnapshot||(get('source-format').value||'text')!==snapshotFormat;
  get('approve-import').disabled=!ready||reading;
  get('review-list').querySelectorAll('.entry').forEach(entry=>entry.disabled=saving||reading);
  get('review-list').querySelectorAll('input[type="checkbox"]').forEach(input=>input.disabled=saving||reading);
+ get('review-heading').textContent=costsOnly()?'2. Review cost updates':'2. Review before adding';
+ get('import-mode-help').textContent=costsOnly()?'Fill missing prices without adding stock. Match the original purchase, not just its colour. Existing prices stay protected unless you confirm each replacement.':'Add reviewed entries as new stock. Possible duplicates start unselected.';
+ get('approval-copy').textContent=costsOnly()?'I have checked the selected purchase matches and prices across all pages.':'I have checked the selected entries across all pages, quantities and estimated swatches.';
+ get('save-help').textContent=costsOnly()?'Only cost per roll and currency are saved. Unmatched rows never create stock. Counts, dates, colours, permanent IDs and used marks stay unchanged.':'Possible duplicates start unselected. Select them only if they are additional stock. Blank count or weight stays unknown.';
+ get('add-blank').textContent=costsOnly()?'Add a blank cost update':'Add a blank entry';
 }
 async function api(method='GET',body){
  const response=await fetch('/api/library',{method,credentials:'same-origin',redirect:'error',cache:'no-store',signal:AbortSignal.timeout(20000),headers:body?{'Content-Type':'application/json'}:{},body:body?JSON.stringify(body):undefined});
@@ -65,12 +70,12 @@ async function refreshAccount(){
   const modified=library&&library.revision!==current.revision;
   library=current;get('import-workspace').hidden=false;get('account-status').textContent='Importing into your private library.';
   window.GmailImport?.controls?.();
-  if(modified&&rows.length){markDuplicates();renderRows();get('approve-import').checked=false;message('Your library changed elsewhere. Check the duplicate warnings and approve again.')}
+  if(modified&&rows.length){markDuplicates();renderRows();get('approve-import').checked=false;message('Your library changed elsewhere. Check your matches and duplicate warnings, then approve again.')}
  }catch(error){if(error.status===401)loseAccount('Sign in to import into your library.');else message(error.message)}
  controls();
 }
 function markDuplicates(){
- const previous=[];
+ if(costsOnly()){for(const row of rows)CostImport.prepare(row,library.items);return}const previous=[];
  for(const row of rows){
   row.duplicate=FilamentImport.duplicates(row.spool,library.items.concat(previous)).length>0;
   if(row.duplicate)row.selected=false;
@@ -84,7 +89,7 @@ function renderRows(){
  for(let index=0;index<Math.ceil(rows.length/reviewPageSize);index++){const option=document.createElement('option');option.value=String(index);option.textContent=(index+1)+' of '+Math.ceil(rows.length/reviewPageSize);get('review-page').append(option)}
  get('review-page').value=String(reviewPage);
  rows.slice(reviewPage*reviewPageSize,(reviewPage+1)*reviewPageSize).forEach((row,offset)=>{
-  const index=reviewPage*reviewPageSize+offset;
+  const index=reviewPage*reviewPageSize+offset;if(costsOnly()){list.append(CostImportReview.render(row,index,library.items,changed));return}
   const entry=document.createElement('fieldset');entry.className='entry';
   const legend=document.createElement('legend'),choice=document.createElement('label');choice.className='check';
   const checkbox=document.createElement('input');checkbox.type='checkbox';checkbox.checked=row.selected;
@@ -112,7 +117,7 @@ function renderRows(){
    else if(key==='costPerRoll'){input.type='number';input.min='0';input.max='100000';input.step='0.01';input.placeholder='Unknown'}
    else if(key==='date')input.type='date';
    else {input.type='text';input.maxLength=key==='notes'?500:key==='product'?100:key==='hex'?7:80;if(key==='hex'){input.pattern='#[A-Fa-f0-9]{6}';input.placeholder='#RRGGBB'}}
-   input.required=!['spools','weightGrams','notes','costPerRoll','costCurrency'].includes(key);input.value=row.spool[key]??'';input.disabled=!row.selected;
+   input.required=!['spools','weightGrams','notes','costPerRoll','costCurrency','order','retailer'].includes(key);input.value=row.spool[key]??'';input.disabled=!row.selected;
    input.addEventListener('input',()=>{row.spool[key]=['spools','weightGrams','costPerRoll'].includes(key)?input.value===''?null:Number(input.value):input.value;row.duplicate=FilamentImport.duplicates(row.spool,library.items.concat(rows.filter(other=>other!==row).map(other=>other.spool))).length>0;duplicate.hidden=!row.duplicate;duplicate.textContent='Possible duplicate — select only if this is additional stock.';if(key==='hex')row.spool.hexMode='manual';if(['brand','product','material','finish','colour','hex'].includes(key))updateColour();changed()});
    colourInputs.set(key,input);
 
@@ -123,13 +128,13 @@ function renderRows(){
   const details=document.createElement('details'),summary=document.createElement('summary'),source=document.createElement('pre');
   summary.textContent='Show source text';source.textContent=row.source||'Manually entered';details.append(summary,source);entry.append(details);list.append(entry);
  });
- get('review-status').textContent=rows.length+' candidate entr'+(rows.length===1?'y':'ies')+'. '+(rows.length?'Showing '+(reviewPage*reviewPageSize+1)+'–'+Math.min(rows.length,(reviewPage+1)*reviewPageSize)+'. ':'')+'Correct missing or uncertain fields before adding.';
+ get('review-status').textContent=rows.length+' candidate entr'+(rows.length===1?'y':'ies')+'. '+(rows.length?'Showing '+(reviewPage*reviewPageSize+1)+'–'+Math.min(rows.length,(reviewPage+1)*reviewPageSize)+'. ':'')+(costsOnly()?'Only selected prices will change. Unknown or uncertain matches need review.':'Correct missing or uncertain fields before adding.');
  controls();
 }
 function extract(){
  try{
   const format=get('source-format').value||'text';
-  rows=(format==='csv'?FilamentCsv:FilamentImport).parse(get('source-text').value).map(row=>({...row,selected:true,spool:{...row.spool,date:row.spool.date||today()}}));snapshotFormat=format;
+  rows=(format==='csv'?FilamentCsv:FilamentImport).parse(get('source-text').value).map(row=>({...row,selected:true,spool:{...row.spool,...(format==='text'?CostImport.fromText(row.source):{}),date:row.spool.date||(costsOnly()?'':today())}}));snapshotFormat=format;
   sourceSnapshot=get('source-text').value;reviewPage=0;markDuplicates();changed();renderRows();
   message(rows.length?'Review your entries. Nothing has been saved.':'No clear filament product lines found. Edit the text or add a blank entry.');
  }catch(error){message(error.message)}
@@ -171,19 +176,19 @@ async function readImage(){
  finally{clearTimeout(timeout);if(bitmap)bitmap.close();if(currentWorker)await currentWorker.terminate().catch(()=>{});if(token===runId){worker=null;reading=false;controls()}}
 }
 async function save(event){
- event.preventDefault();if(saving||get('save-import').disabled||!get('review-form').reportValidity())return;
+ event.preventDefault();if(saving||get('save-import').disabled||(!costsOnly()&&!get('review-form').reportValidity()))return;
  saving=true;controls();
  try{
-  const selected=rows.filter(row=>row.selected).map(row=>({...row.spool}));
-  const fingerprint=JSON.stringify({account:library.accountKey,revision:library.revision,source:sourceSnapshot,selected});
+  const costMode=costsOnly(),selected=costMode?CostImport.changes(rows,library.items):rows.filter(row=>row.selected).map(row=>({...row.spool}));
+  const fingerprint=JSON.stringify({account:library.accountKey,revision:library.revision,source:sourceSnapshot,mode:costMode?'costs':'add',selected});
   if(!pendingSave||pendingSave.fingerprint!==fingerprint){
    const bytes=await crypto.subtle.digest('SHA-256',new TextEncoder().encode((sourceSnapshot.trim()||JSON.stringify(selected)).replace(/\s+/g,' ')));
    const sourceHash=Array.from(new Uint8Array(bytes),byte=>byte.toString(16).padStart(2,'0')).join('');
-   pendingSave={fingerprint,body:{kind:'import',reviewed:true,spools:selected,sourceHash,expectedAccountKey:library.accountKey,baseRevision:library.revision,requestId:crypto.randomUUID()}};
+   pendingSave={fingerprint,body:{...(costMode?{kind:'cost-update',changes:selected}:{kind:'import',spools:selected,sourceHash}),reviewed:true,expectedAccountKey:library.accountKey,baseRevision:library.revision,requestId:crypto.randomUUID()}};
   }
   const current=await api('POST',pendingSave.body);
   if(current.accountKey!==library.accountKey){loseAccount('The account changed. Reopen the importer.');return}
-  library=current;clearDraft();message('Added '+selected.length+' entries to your private library.');
+  library=current;clearDraft();message(costMode?'Updated '+selected.length+' costs. No quantities, spool IDs or used marks changed.':'Added '+selected.length+' entries to your private library.');
   const link=document.createElement('a');link.href='/';link.textContent=' View your library';get('import-message').append(link);
  }catch(error){
   if(error.status===401)loseAccount('Your sign-in expired. Reopen the importer.');
@@ -215,11 +220,12 @@ get('source-csv').onchange=async()=>{
  finally{if(token===runId){reading=false;controls();}}
 };
 get('source-format').onchange=changed;get('source-text').oninput=changed;get('read-image').onclick=readImage;get('cancel-read').onclick=()=>cancelRead();
+get('import-mode').onchange=()=>{rows=[];reviewPage=0;changed();renderRows();message('Mode changed. Choose Find filament entries to review this source again. Nothing was saved.')};
 get('extract').onclick=extract;get('clear-import').onclick=clearDraft;
 get('add-blank').onclick=()=>{
  if(rows.length>=FilamentCsv.maxEntries){message('Use at most 500 entries per batch.');return}
- rows.push({source:'',warnings:['Enter the details from your label.'],selected:true,spool:{brand:'',product:'',material:'',finish:'unknown',colour:'',hex:'',spools:null,weightGrams:null,packaging:'unknown',date:today(),notes:''}});
- sourceSnapshot=get('source-text').value;snapshotFormat=get('source-format').value||'text';reviewPage=Math.floor((rows.length-1)/reviewPageSize);changed();renderRows();
+ rows.push({source:'',warnings:['Enter the details from your label.'],selected:true,spool:{brand:'',product:'',material:'',finish:'unknown',colour:'',hex:'',spools:null,weightGrams:null,packaging:'unknown',date:costsOnly()?'':today(),notes:''}});
+ if(costsOnly())CostImport.prepare(rows.at(-1),library.items);sourceSnapshot=get('source-text').value;snapshotFormat=get('source-format').value||'text';reviewPage=Math.floor((rows.length-1)/reviewPageSize);changed();renderRows();
 };
 function turnReviewPage(page){
  if(saving||reading||!library)return;

@@ -10,10 +10,10 @@
  function clear(){library=null;pending=null;node('setup-work').hidden=true;node('setup-steps').replaceChildren()}
  function render(){
   const opened=new Set(Array.from(node('setup-steps').querySelectorAll('details[open]')).map(detail=>detail.dataset.step));
-  const steps=SpoolSetup.status(library),first=steps.find(step=>step.state==='pending');
+  const steps=SpoolSetup.status(library),returnStep=steps.find(step=>step.id===new URL(location.href).searchParams.get('step')),first=returnStep||steps.find(step=>step.state==='pending');
   const list=node('setup-steps');list.replaceChildren();
   for(const step of steps){
-   const detail=document.createElement('details');detail.className='setup-step';detail.dataset.step=step.id;detail.open=opened.has(step.id)||(!opened.size&&first?.id===step.id);
+   const detail=document.createElement('details');detail.className='setup-step';detail.dataset.step=step.id;detail.id='setup-'+step.id;detail.open=opened.has(step.id)||(!opened.size&&first?.id===step.id);
    const summary=document.createElement('summary'),title=document.createElement('span'),state=document.createElement('span');title.className='step-title';title.textContent=step.title;state.className='step-state';state.textContent=step.state==='done'?(step.id==='library'?'Stock added':'Done · you confirmed'):step.state==='skipped'?'Skipped':step.id==='library'?'Start here':'Optional';summary.append(title,state);detail.append(summary);
    const body=document.createElement('div');body.className='step-body';const intro=document.createElement('p'),help=document.createElement('p');intro.textContent=step.intro;help.textContent=step.help;help.className='step-help';body.append(intro,help);
    if(step.id==='tracking'){
@@ -21,7 +21,7 @@
     facts.textContent=(library.bridge?.enabled?'Bridge key configured':'No bridge key configured')+' · '+mapped+' linked reels. '+(library.bridge?.lastSync?'A bridge sync has been received; this does not prove print consumption.':'No bridge sync received yet.');body.append(facts);
    }
    const actions=document.createElement('div');actions.className='setup-actions';
-   step.links.forEach(([label,href],index)=>{const link=document.createElement('a');link.textContent=label;link.href=href;link.className=index?'setup-secondary':'setup-primary';actions.append(link)});body.append(actions);
+   step.links.forEach(([label,href],index)=>{const link=document.createElement('a');link.textContent=label;const destination=new URL(href,location.href);destination.searchParams.set('setupStep',step.id);link.href=destination.pathname+destination.search+destination.hash;link.className=index?'setup-secondary':'setup-primary';actions.append(link)});body.append(actions);
    if(step.id!=='library'){
     const confirmations=document.createElement('div');confirmations.className='setup-confirmation';
     for(const [label,value] of step.state==='pending'?[[step.confirmation,'done'],['Skip for now','skipped']]:[['Revisit this step','pending']]){const button=document.createElement('button');button.type='button';button.textContent=label;button.onclick=()=>save({step:step.id,state:value});confirmations.append(button)}body.append(confirmations);

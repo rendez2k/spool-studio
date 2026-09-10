@@ -1,6 +1,7 @@
 import { boundedJson } from "./api.mjs";
 import SpoolCatalog from "../out/spool-catalog.js";
 import SpoolCost from '../out/cost-core.js';
+import CostImport from '../out/cost-import-core.js';
 import FilamentColours from '../out/colour-catalog.js';
 import SpoolSetup from '../out/setup-core.js';
 import {addReels, initialiseReels, updateReel, updateItemStatus, tokenHash} from './reels.mjs';
@@ -70,7 +71,7 @@ export async function handleLibrary(request, env) {
       input = await boundedJson(request, 2000000);
       if (!Number.isSafeInteger(input.baseRevision) || input.baseRevision < 1 || typeof input.requestId !== "string" || !/^[a-zA-Z0-9-]{16,64}$/.test(input.requestId)) throw Error("Invalid library request.");
     } catch (error) { return json({ error: error.message }, 400); }
-    if (input.kind === "import" && input.expectedAccountKey !== userId) return json({ error: "The signed-in account changed. Reopen the importer before saving." }, 409);
+    if (['import','cost-update'].includes(input.kind) && input.expectedAccountKey !== userId) return json({ error: "The signed-in account changed. Reopen the importer before saving." }, 409);
     if (['setup','bulk-edit','reel','initialise-reels','bridge-create','bridge-revoke','spoolman-mappings'].includes(input.kind) && input.expectedAccountKey !== userId) return json({error:'The signed-in account changed. Refresh before saving.'},409);
     const row = await getLibrary(env.DB, userId);
     if (row.request_id === input.requestId) return json(libraryView(row, userId));
@@ -78,7 +79,9 @@ export async function handleLibrary(request, env) {
     const data = JSON.parse(row.payload);
     let bridgeToken;
     try {
-      if (input.kind === 'setup') {
+      if (input.kind === 'cost-update') {
+        CostImport.apply(data,input);
+      } else if (input.kind === 'setup') {
         SpoolSetup.update(data,input.setup);
       } else if (input.kind === 'bulk-edit') {
         const allowed = ['brand','product','material','finish','packaging','date','notes'];
@@ -106,11 +109,11 @@ export async function handleLibrary(request, env) {
         if ((data.importHashes || []).includes(input.sourceHash)) return json({ error: "This source was already imported. Check your library before adding it again." }, 409);
         if (data.items.length + input.spools.length > 1000) throw Error("This import would exceed the 1000-entry library limit.");
         const imported = input.spools.map((spool, index) => {
-          try { return validateSpool(spool); }
+          try { const {order,retailer}=CostImport.references(spool); return { ...validateSpool(spool), order, retailer }; }
           catch (error) { error.entryIndex = index; throw error; }
         });
         const addedAt = new Date().toISOString();
-        data.items.push(...imported.map((fields, index) => ({ ...fields, addedAt, id: "spool-" + input.requestId + "-" + index, quantity: fields.spools, form: fields.packaging, sourceProduct: "", retailer: "Reviewed import", order: "", messageId: "", lineTotal: null, currency: "", used: false })));
+        data.items.push(...imported.map((fields, index) => ({ ...fields, addedAt, id: "spool-" + input.requestId + "-" + index, quantity: fields.spools, form: fields.packaging, sourceProduct: "", retailer: fields.retailer || "Reviewed import", order: fields.order || "", messageId: "", lineTotal: null, currency: "", used: false })));
         for (const item of data.items.slice(-imported.length)) addReels(data, item);
         data.importHashes = [...(data.importHashes || []), input.sourceHash];
       } else if (input.kind === "add" || input.kind === "edit") {

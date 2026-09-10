@@ -12,11 +12,11 @@
 <details id="gmail-panel"><summary>Import from Gmail · optional connection</summary><p class="privacy">Separate from Google sign-in. Read-only permission allows access to your mailbox; this tool searches only when you ask. Subjects and selected message bodies are processed on this device, not uploaded to our server. Attachments are not imported. Only reviewed spool fields are saved. <a href="/guide.html#gmail">Setup &amp; privacy</a>.</p><button id="gmail-prepare" type="button">Check Gmail availability</button><button id="gmail-connect" type="button" hidden>Connect Gmail read-only</button><button id="gmail-disconnect" type="button" disabled>Disconnect Gmail</button><label for="gmail-search-kind">Email type</label><select id="gmail-search-kind" disabled><option value="orders">Order confirmations &amp; receipts</option><option value="all">All matching emails</option></select><p class="privacy" id="gmail-search-help">Looks for purchase subjects and filters out delivery updates, account setup and newsletters. Not a guarantee: review each result and pick one email per order. Use All matching emails if an order is missing.</p><label for="gmail-query">Brand, shop or search terms</label><input id="gmail-query" aria-describedby="gmail-search-help" maxlength="300" value='newer_than:1y (filament OR "Bambu Lab" OR SUNLU OR ELEGOO)' disabled><button id="gmail-search" type="button" disabled>Find up to 20 emails</button><div id="gmail-results"></div><button id="gmail-read" type="button" disabled>Copy selected order text</button><button id="gmail-cancel" type="button" hidden>Cancel</button><p id="gmail-status" role="status">Gmail setup is pending. Pasted text, CSV and image import work without a connection.</p></details>
 <div id="import-workspace" hidden class="workspace">
 <section class="source" aria-labelledby="source-heading">
-<h2 id="source-heading">1. Read your source</h2>
+<label for="import-mode">What do you want to do?</label><select id="import-mode"><option value="add">Add new stock</option><option value="costs">Update existing costs only</option></select><p id="import-mode-help" class="hint">Add reviewed entries as new stock. Possible duplicates start unselected.</p><h2 id="source-heading">1. Read your source</h2>
 <label for="source-csv">Filament CSV from ChatGPT or Excel</label>
 <input id="source-csv" type="file" accept=".csv,text/csv">
 <p class="hint">Import up to 500 entries per CSV (1 MB), then review 20 at a time. Use our headers and UTF-8 CSV, not .xlsx. Clear any current draft before loading a file. <a href="/email-import.html">Copy the email export prompt</a> · <a href="/filament-import-template.csv" download>Download blank CSV template</a></p>
-<p class="privacy">Import prices with the <a href="/filament-cost-import-template.csv">CSV template with costs</a>: use costPerRoll and costCurrency (for example 12.99 and GBP). Gmail/image text recognises explicit “Cost per roll: GBP 12.99” lines. Review ambiguous order or bundle totals manually. <a href="/guide.html#costing">Costing guide</a>.</p>
+<p class="privacy">Import prices with the <a href="/filament-cost-import-template.csv">CSV template with costs</a>: use costPerRoll and costCurrency (for example 12.99 and GBP). Optional CSV columns entryId,order,retailer help match an existing purchase. Gmail/image text recognises explicit “Cost per roll: GBP 12.99” lines. Review ambiguous order or bundle totals manually. <a href="/guide.html#costing">Costing guide</a>.</p>
 <label for="source-image">Screenshot or label photo</label>
 <input id="source-image" type="file" accept="image/jpeg,image/png,image/webp">
 <p class="hint">One JPG, PNG or WebP, up to 10 MB. English printed text works best. Crop to the product or label; the photo’s colour is not measured. For HEIC or PDF, take a screenshot first.</p>
@@ -37,8 +37,8 @@
 <div id="review-list"></div>
 <nav id="review-pagination-bottom" class="review-pagination" aria-label="Continue reviewing" hidden><button id="review-prev-bottom" type="button">Previous page</button><button id="review-next-bottom" type="button">Next page</button></nav>
 <div id="review-footer" hidden>
-<label class="check"><input id="approve-import" type="checkbox">I have checked the selected entries across all pages, quantities and estimated swatches.</label>
-<p class="hint">Possible duplicates start unselected. Select them only if they are additional stock. Blank count or weight stays unknown.</p>
+<label class="check"><input id="approve-import" type="checkbox"><span id="approval-copy">I have checked the selected entries across all pages, quantities and estimated swatches.</span></label>
+<p id="save-help" class="hint">Possible duplicates start unselected. Select them only if they are additional stock. Blank count or weight stays unknown.</p>
 <button id="save-import" type="submit" class="primary" disabled>Add selected entries</button>
 </div>
 </form>
@@ -47,5 +47,5 @@
 <p id="import-message" role="status"></p>
 <footer><p class="privacy"><a href="/privacy.html">Privacy</a> · <a href="/contact.html">Contact</a></p></footer>
 </main>
-<script src="/colour-catalog.js"></script><script src="/cost-core.js"></script><script src="/import-parser.js"></script><script src="/import-csv.js"></script><script src="/import.js"></script><script src="/gmail-core.js"></script><script src="/gmail-import.js"></script>
-</body></html>
+<script src="/colour-catalog.js"></script><script src="/cost-core.js"></script><script src="/import-parser.js"></script><script src="/import-csv.js"></script><script src="/cost-import-core.js"></script><script src="/cost-import-review.js"></script><script src="/import.js"></script><script src="/gmail-core.js"></script><script src="/gmail-import.js"></script>
+<script src="/setup-core.js"></script><script src="/setup-flow.js"></script></body></html>

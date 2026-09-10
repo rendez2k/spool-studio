@@ -4,3 +4,11 @@
 .studio-brand:focus-visible{outline:3px solid var(--accent,#2856c7);outline-offset:4px}
 .sidebar>.studio-brand{margin:0 6px 24px}
 @media(max-width:800px){.sidebar>.studio-brand{margin:0}}
+main>.setup-flow{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:10px 16px;margin:0 0 20px;background:var(--surface,#fff);color:var(--text,var(--ink,#172337));border:1px solid var(--line,#d6ddeb);border-radius:10px;font-size:.875rem}
+.setup-flow span{flex:1 1 200px;font-weight:600}
+.setup-flow a,.setup-flow button{display:inline-flex;align-items:center;min-height:44px}
+.setup-flow a{font-weight:600}
+.setup-flow button{padding:8px 12px;background:transparent;border:1px solid var(--line,#d6ddeb);border-radius:8px;color:inherit;cursor:pointer}
+@media print{main>.setup-flow{display:none}}
+html:has(.setup-flow){scroll-padding-top:90px}
+@media(max-width:680px){html:has(.setup-flow){scroll-padding-top:125px}}
