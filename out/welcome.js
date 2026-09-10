@@ -13,7 +13,7 @@
   const steps=SpoolSetup.status(library),returnStep=steps.find(step=>step.id===new URL(location.href).searchParams.get('step')),first=returnStep||steps.find(step=>step.state==='pending');
   const list=node('setup-steps');list.replaceChildren();
   for(const step of steps){
-   const detail=document.createElement('details');detail.className='setup-step';detail.dataset.step=step.id;detail.id='setup-'+step.id;detail.open=opened.has(step.id)||(!opened.size&&first?.id===step.id);
+   const detail=document.createElement('details');detail.className='setup-step';detail.name='setup-checklist';detail.dataset.step=step.id;detail.id='setup-'+step.id;detail.open=opened.has(step.id)||(!opened.size&&first?.id===step.id);
    const summary=document.createElement('summary'),title=document.createElement('span'),state=document.createElement('span');title.className='step-title';title.textContent=step.title;state.className='step-state';state.textContent=step.state==='done'?(step.id==='library'?'Stock added':'Done · you confirmed'):step.state==='skipped'?'Skipped':step.id==='library'?'Start here':'Optional';summary.append(title,state);detail.append(summary);
    const body=document.createElement('div');body.className='step-body';const intro=document.createElement('p'),help=document.createElement('p');intro.textContent=step.intro;help.textContent=step.help;help.className='step-help';body.append(intro,help);
    if(step.id==='tracking'){

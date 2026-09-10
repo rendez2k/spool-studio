@@ -1,5 +1,16 @@
 [
   {
+    "version": "1.8.0",
+    "date": "2026-09-10",
+    "title": "One connected workspace",
+    "changes": [
+      "A consistent workflow sidebar connects your library, print preparation, printer tools and support. On mobile, use the bottom navigation and Menu to reach every workspace.",
+      "Shorter filament cards, quieter buttons and a compact Filters menu put more of your stock on screen. Your light or dark theme follows you between pages.",
+      "Matching reveals phone and export actions after a model is loaded. Printer setup comes first when no bridge is configured, and the setup checklist opens one step at a time.",
+      "Labels and QR codes keep their physical print sizes; inventory, import approvals and printer safety checks are unchanged."
+    ]
+  },
+  {
     "version": "1.7.3",
     "date": "2026-09-10",
     "title": "Labels your way",

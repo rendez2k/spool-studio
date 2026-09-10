@@ -12,7 +12,7 @@ test('privacy and contact are readable without signing in and use local assets',
   assert.match(html,/mailto:hello@productkit\.digital/);
   assert.match(html,/href="https:\/\/productkit\.digital"/);
   assert.match(html,/<main id="main">/);
-  assert.doesNotMatch(html,/<script|<iframe|<form|\b(?:src|href)="javascript:/i);
+  assert.doesNotMatch(html.replace('<script src="/studio.js" defer></script>',''),/<script|<iframe|<form|\b(?:src|href)="javascript:/i);
   for(const [,asset] of html.matchAll(/(?:src|href)="(\/(?:legal\.css|icons\/[^"\s]+))"/g)){
    assert.equal((await worker.fetch(new Request('https://test.example'+asset),{})).status,200);
   }

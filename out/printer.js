@@ -48,7 +48,7 @@
    const next=await api('/api/printer');if(current!==sequence)return;
    if(library&&library.accountKey!==next.accountKey){clear();message('Account changed. Reload this page to choose from the new library.');return}
    if(!library||full){const selectedId=node('printer-item').value;const updated=await api('/api/library');if(current!==sequence)return;if(updated.accountKey!==next.accountKey){clear();throw Error('Account changed. Reload the page.')};library=updated;populate();const initial=new URLSearchParams(location.search).get('item');if(!selectedId&&initial&&library.items.some(item=>item.id===initial)){node('printer-item').value=initial;reels();const reelId=new URLSearchParams(location.search).get('reel');if(library.reels?.some(reel=>reel.id===reelId&&reel.itemId===initial&&!reel.used))node('printer-reel').value=reelId}}
-   state=next;node('printer-work').hidden=false;node('printer-setup').open=!state.enabled;renderStatus();
+   state=next;node('printer-work').hidden=!state.enabled;node('printer-setup').open=!state.enabled;renderStatus();
   }catch(error){message(error.message);controls()}
  }
  async function action(body){

@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-10T15:20:31Z",
+  "title": "Design System: Spool Studio",
+  "extensions": {
+    "shadows": [],
+    "motion": [
+      { "name": "button-colour", "value": "background-color 140ms ease,border-color 140ms ease", "purpose": "Button hover feedback without movement." },
+      { "name": "reduced-motion", "value": "transition:none!important;scroll-behavior:auto!important", "purpose": "Applied under prefers-reduced-motion: reduce." }
+    ],
+    "breakpoints": [
+      { "name": "narrow-desktop-max", "value": "1100px" },
+      { "name": "mobile-max", "value": "800px" },
+      { "name": "small-mobile-max", "value": "420px" }
+    ],
+    "focus": { "outline": "2px solid var(--accent)", "outlineOffset": "3px", "selector": ":focus-visible" },
+    "backdrop": "rgb(16 20 38 / .45)",
+    "stacking": { "selection": 10, "filters": 20, "secondaryRail": 25, "mobileNavigation": 30 }
+  },
+  "components": [
+    {
+      "name": "Primary button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Explicit primary action; compact shared button styling.",
+      "html": "<button class=\"ds-primary\" type=\"button\">Save changes</button>",
+      "css": ".ds-primary{min-height:36px;padding:7px 13px;font:600 .8125rem/1.45 var(--font,ui-sans-serif,sans-serif);border:1px solid transparent;border-radius:var(--control-radius,10px);background:var(--accent,#4656c9);color:var(--on-accent,#fff);cursor:pointer;transition:background-color 140ms ease,border-color 140ms ease}.ds-primary:not(:disabled):hover{background:var(--accent-hover,#3644a9)}.ds-primary:focus-visible{outline:2px solid var(--accent,#4656c9);outline-offset:3px}.ds-primary:disabled{opacity:.5;cursor:not-allowed}@media(prefers-reduced-motion:reduce){.ds-primary{transition:none}}"
+    },
+    {
+      "name": "Secondary button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Supporting action with a visible boundary.",
+      "html": "<button class=\"ds-secondary\" type=\"button\">Review change</button>",
+      "css": ".ds-secondary{min-height:36px;padding:7px 13px;font:600 .8125rem/1.45 var(--font,ui-sans-serif,sans-serif);border:1px solid var(--line,#e0e4ed);border-radius:var(--control-radius,10px);background:var(--surface,#fff);color:var(--text,#222636);cursor:pointer;transition:background-color 140ms ease,border-color 140ms ease}.ds-secondary:not(:disabled):hover{background:var(--tint,#eef0ff);border-color:var(--accent,#4656c9)}.ds-secondary:focus-visible{outline:2px solid var(--accent,#4656c9);outline-offset:3px}.ds-secondary:disabled{opacity:.5;cursor:not-allowed}@media(prefers-reduced-motion:reduce){.ds-secondary{transition:none}}"
+    },
+    {
+      "name": "Text field",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Native field with a persistent accessible label.",
+      "html": "<label class=\"ds-field\">Find a spool<input class=\"ds-input\" type=\"search\" placeholder=\"Number, colour, brand or location\"></label>",
+      "css": ".ds-field{display:grid;gap:4px;font:400 .8125rem/1.5 var(--font,ui-sans-serif,sans-serif);color:var(--text,#222636)}.ds-input{min-height:38px;padding:8px 11px;border:1px solid var(--line,#e0e4ed);border-radius:10px;background:var(--surface,#fff);color:var(--text,#222636);font:400 .875rem/1.4 var(--font,ui-sans-serif,sans-serif);caret-color:var(--accent,#4656c9)}.ds-input::placeholder{color:var(--muted,#606779);opacity:1}.ds-input:focus-visible{outline:2px solid var(--accent,#4656c9);outline-offset:3px}"
+    },
+    {
+      "name": "Workflow navigation link",
+      "kind": "nav",
+      "refersTo": "nav-active",
+      "description": "Text and stroke icon identify the selected library route.",
+      "html": "<nav class=\"ds-nav\" aria-label=\"Your library\"><a href=\"/?view=cards\" aria-current=\"page\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect x=\"3\" y=\"3\" width=\"7\" height=\"7\" rx=\"1.5\"/><rect x=\"14\" y=\"3\" width=\"7\" height=\"7\" rx=\"1.5\"/><rect x=\"3\" y=\"14\" width=\"7\" height=\"7\" rx=\"1.5\"/><rect x=\"14\" y=\"14\" width=\"7\" height=\"7\" rx=\"1.5\"/></svg><span>Collection</span></a></nav>",
+      "css": ".ds-nav a{display:flex;align-items:center;gap:10px;min-height:34px;padding:7px 12px;border:0;border-radius:9px;font:550 .8125rem/1.5 var(--font,ui-sans-serif,sans-serif);text-decoration:none;color:var(--muted,#606779);background:transparent}.ds-nav a[aria-current=page]{background:var(--tint,#eef0ff);color:var(--accent,#4656c9);font-weight:650}.ds-nav a:hover{background:var(--bg,#f7f8fc);color:var(--text,#222636)}.ds-nav a:focus-visible{outline:2px solid var(--accent,#4656c9);outline-offset:3px}.ds-nav svg{width:18px;height:18px;flex:none}@media(max-width:800px){.ds-nav a{min-height:44px}}"
+    },
+    {
+      "name": "Import review badge",
+      "kind": "chip",
+      "refersTo": "import-badge",
+      "description": "Non-interactive review status stated in words.",
+      "html": "<span class=\"ds-badge ds-review\">Review</span>",
+      "css": ".ds-badge{display:inline-block;padding:3px 8px;border-radius:6px;font:400 .75rem/1.5 var(--font,ui-sans-serif,sans-serif);background:var(--tint,#eef0ff);color:var(--accent,#4656c9)}.ds-badge.ds-review{background:var(--bg,#f7f8fc);color:var(--text,#222636)}"
+    },
+    {
+      "name": "Collection card content",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Illustrative card content using shared title, metadata and quantity styling; no account data.",
+      "html": "<article class=\"ds-card\"><div class=\"ds-card-body\"><h3>Filament</h3><p class=\"ds-meta\">Material and finish</p><p class=\"ds-total\">Quantity unknown</p></div></article>",
+      "css": ".ds-card{border-radius:14px;background:var(--surface,#fff);color:var(--text,#222636);font-family:var(--font,ui-sans-serif,sans-serif)}.ds-card-body{padding:14px;display:flex;flex-direction:column}.ds-card h3{font-size:1rem;line-height:1.35;margin:0 0 5px}.ds-meta{font-size:.75rem;color:var(--muted,#606779);margin:3px 0 0}.ds-total{font-size:1.1875rem;line-height:1.25;font-weight:650;margin:14px 0 0}@media(max-width:800px){.ds-card-body{padding:12px}.ds-total{margin-top:10px}}"
+    }
+  ],
+  "narrative": {
+    "overview": "Spool Studio keeps its existing blue spool identity with a compact, HeroUI/shadcn-inspired interface. Shared native HTML, CSS and JavaScript provide the system; those references describe appearance and interaction, not installed React components.\n\nThe shared shell favours clear workflow groups, restrained surfaces and consistent controls. Filament colour is product information, while the blue interface accent identifies actions and selection. This document records the shared rules in `out/studio.css` and `out/studio.js`; page styles still supply specialised layouts. It is not a claim that visual or hardware verification is complete.",
+    "keyCharacteristics": [
+      "Persistent workflow navigation.",
+      "Compact controls with visible focus and selection.",
+      "Light and dark semantic surfaces.",
+      "Native dialogs, disclosures and form controls."
+    ],
+    "rules": [],
+    "dos": [
+      "Do keep the existing blue spool logo and shared semantic tokens.",
+      "Do preserve route access, visible focus, uncertainty labels and explicit review/save/send steps.",
+      "Do keep privacy and device prerequisites close to the relevant action."
+    ],
+    "donts": [
+      "Don't describe the refresh as a rebrand or a React, HeroUI or shadcn dependency migration.",
+      "Don't replace material or finish information with a colour-only cue.",
+      "Don't present source inspection as completed browser, accessibility or hardware testing."
+    ]
+  }
+}
