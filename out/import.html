@@ -16,6 +16,7 @@
 <label for="source-csv">Filament CSV from ChatGPT or Excel</label>
 <input id="source-csv" type="file" accept=".csv,text/csv">
 <p class="hint">Import up to 500 entries per CSV (1 MB), then review 20 at a time. Use our headers and UTF-8 CSV, not .xlsx. Clear any current draft before loading a file. <a href="/email-import.html">Copy the email export prompt</a> · <a href="/filament-import-template.csv" download>Download blank CSV template</a></p>
+<p class="privacy">Import prices with the <a href="/filament-cost-import-template.csv">CSV template with costs</a>: use costPerRoll and costCurrency (for example 12.99 and GBP). Gmail/image text recognises explicit “Cost per roll: GBP 12.99” lines. Review ambiguous order or bundle totals manually. <a href="/guide.html#costing">Costing guide</a>.</p>
 <label for="source-image">Screenshot or label photo</label>
 <input id="source-image" type="file" accept="image/jpeg,image/png,image/webp">
 <p class="hint">One JPG, PNG or WebP, up to 10 MB. English printed text works best. Crop to the product or label; the photo’s colour is not measured. For HEIC or PDF, take a screenshot first.</p>
@@ -46,5 +47,5 @@
 <p id="import-message" role="status"></p>
 <footer><p class="privacy"><a href="/privacy.html">Privacy</a> · <a href="/contact.html">Contact</a></p></footer>
 </main>
-<script src="/import-parser.js"></script><script src="/import-csv.js"></script><script src="/import.js"></script><script src="/gmail-core.js"></script><script src="/gmail-import.js"></script>
+<script src="/cost-core.js"></script><script src="/import-parser.js"></script><script src="/import-csv.js"></script><script src="/import.js"></script><script src="/gmail-core.js"></script><script src="/gmail-import.js"></script>
 </body></html>

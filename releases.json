@@ -1,5 +1,15 @@
 [
   {
+    "version": "1.1.0",
+    "date": "2026-09-10",
+    "title": "Spool prices and filament cost estimates",
+    "changes": [
+      "Optional budgeting fallback: assume £15/kg (editable) where purchase costs are missing. Assumptions are labelled and never saved as actual purchase prices.",
+      "Save optional per-roll costs and currency in your library. Import costs from CSV or clearly labelled email/image text, then review before saving.",
+      "Match a print now estimates filament costs from manually entered slicer grams, with price ranges and clear unknown-cost warnings. It does not slice your model or extract usage automatically."
+    ]
+  },
+  {
     "version": "1.0.0",
     "date": "2026-09-10",
     "title": "Easier organising, clearer imports",

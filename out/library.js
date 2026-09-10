@@ -77,6 +77,8 @@ function fillSpoolForm(row){
  $('spool-finish').value=row?.finish||FilamentMatcher.finish(row?.product||'standard');
  $('spool-hex').value=row?.hex||'#EF8D34';$('spool-sample').value=$('spool-hex').value;
  $('spool-count').value=row?(row.spools??''):1;$('spool-weight').value=row?(row.weightGrams??''):1000;
+ const price=typeof SpoolCost!=='undefined'?SpoolCost.purchase(row):null;
+ $('spool-cost').value=price?Math.round(price.amount*100)/100:'';$('spool-currency').value=price?.currency||row?.costCurrency||'GBP';
  $('spool-date').value=row?.date||new Date().toLocaleDateString('en-CA');
  $('spool-packaging').value=row?packaging(row):'spooled';$('spool-error').textContent='';
  $('save-spool').textContent=row?'Save changes':'Add to library';
@@ -102,6 +104,7 @@ $('spool-form').onsubmit=async event=>{
  if(window.SpoolAssist){try{Object.assign(spool,window.SpoolAssist.fields())}catch(error){$('spool-error').textContent=error.message;return}}
  spool.spools=$('spool-count').value===''?null:Number($('spool-count').value);
  spool.weightGrams=$('spool-weight').value===''?null:Number($('spool-weight').value);
+ spool.costPerRoll=$('spool-cost').value===''?null:Number($('spool-cost').value);spool.costCurrency=$('spool-currency').value;
  if(await saveLibraryAction({kind:editingSpoolId?'edit':'add',id:editingSpoolId,spool})){$('spool-dialog').close();if(!editingSpoolId)reset()}
 };
 $('refresh-library').onclick=refreshLibrary;

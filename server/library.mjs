@@ -1,5 +1,6 @@
 import { boundedJson } from "./api.mjs";
 import SpoolCatalog from "../out/spool-catalog.js";
+import SpoolCost from '../out/cost-core.js';
 import {addReels, initialiseReels, updateReel, updateItemStatus, tokenHash} from './reels.mjs';
 import {linkSpoolman} from './spoolman-mapping.mjs';
 
@@ -24,7 +25,7 @@ export function validateSpool(input) {
   if (input.spools !== null && (!Number.isInteger(input.spools) || input.spools < 1 || input.spools > 500)) throw Error("Enter 1–500 rolls, or leave it blank if unknown.");
   if (input.weightGrams !== null && (!Number.isInteger(input.weightGrams) || input.weightGrams < 1 || input.weightGrams > 10000)) throw Error("Enter 1–10000 grams per roll, or leave it blank.");
   if (typeof input.date !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(input.date) || !Number.isFinite(Date.parse(input.date)) || new Date(input.date).toISOString().slice(0, 10) !== input.date) throw Error("Choose a valid date.");
-  const optional = {};
+  const optional = SpoolCost.fields(input);
   if (input.barcode !== undefined) optional.barcode = SpoolCatalog.barcode(input.barcode);
   if (input.sourceUrl !== undefined) optional.sourceUrl = SpoolCatalog.sourceUrl(input.sourceUrl);
   return { brand, product, colour, notes, material: input.material, finish: input.finish, packaging: input.packaging, hex: input.hex.toUpperCase(), spools: input.spools, weightGrams: input.weightGrams, date: input.date, ...optional };

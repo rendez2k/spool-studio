@@ -1,5 +1,6 @@
 (function(root){
  'use strict';
+ const costing=typeof module==='object'&&module.exports?require('./cost-core.js'):root.SpoolCost;
  const materials=/\bPLA\s*\+|\b(PLA\s+Plus|PETG|PLA|ABS|ASA|TPU|PA|PC|PVA|HIPS)\b/i;
  const brands=/\b(Bambu(?:\s+Lab)?|SUNLU|ELEGOO|eSUN|Polymaker|Prusament|Overture|Anycubic|Creality|Eryone|JAYO|AMOLEN)\b/i;
  const finishes=/\b(matte|matt|basic|standard|silk|marble|sparkle|wood|glow|satin|metallic)\b/i;
@@ -46,7 +47,9 @@
    if(!source.match(/#[a-f0-9]{6}\b/i))warnings.push(hex?'Swatch is a broad colour estimate, not a manufacturer shade.':'Colour and swatch need entering.');
    if(spools===null)warnings.push('Roll count is not reliably stated; blank stays unknown.');
    if(!date)warnings.push('No purchase date found; today is used as the added date.');
-   return {source,warnings,spool:{brand:/^bambu$/i.test(brand)?'Bambu Lab':brand,product:profile,material:foundMaterial,finish,colour,hex,spools,weightGrams,packaging,date,notes:''}};
+   const costs=costing.fromText(source);
+   if(costs.costPerRoll===undefined)warnings.push('Cost not inferred from totals or bundle prices. Enter cost per roll and currency if known.');
+   return {source,warnings,spool:{brand:/^bambu$/i.test(brand)?'Bambu Lab':brand,product:profile,material:foundMaterial,finish,colour,hex,spools,weightGrams,packaging,date,notes:'',...costs}};
   });
  }
  function duplicates(spool,inventory){

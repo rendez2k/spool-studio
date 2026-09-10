@@ -6,7 +6,7 @@ let reviewPage=0;
 const reviewPageSize=20;
 const materialOptions=['PLA','PLA+','PETG','ABS','ASA','TPU','PA','PC','PVA','HIPS','Other'];
 const finishOptions=['unknown','standard','matte','silk','marble','sparkle','wood','glow','satin','metal'];
-const fields=[['brand','Brand'],['product','Product / type'],['material','Material'],['finish','Finish'],['colour','Colour name'],['hex','Colour hex (estimate unless printed)'],['spools','Number of rolls'],['weightGrams','Grams per roll'],['packaging','Packaging'],['date','Purchase / added date'],['notes','Notes / uncertainties']];
+const fields=[['brand','Brand'],['product','Product / type'],['material','Material'],['finish','Finish'],['colour','Colour name'],['hex','Colour hex (estimate unless printed)'],['spools','Number of rolls'],['weightGrams','Grams per roll'],['costPerRoll','Cost per roll (not line total)'],['costCurrency','Cost currency (GBP, EUR, USD…)'],['packaging','Packaging'],['date','Purchase / added date'],['notes','Notes / uncertainties']];
 function today(){const date=new Date();return [date.getFullYear(),String(date.getMonth()+1).padStart(2,'0'),String(date.getDate()).padStart(2,'0')].join('-')}
 function message(text){get('import-message').textContent=text}
 function changed(){get('approve-import').checked=false;pendingSave=null;controls()}
@@ -95,14 +95,15 @@ function renderRows(){
   const grid=document.createElement('div');grid.className='fields';const inputs=[];
   for(const [key,labelText] of fields){
    const label=document.createElement('label');label.textContent=labelText;
-   const options=key==='material'?materialOptions:key==='finish'?finishOptions:key==='packaging'?['unknown','spooled','refill']:null;
+   const options=key==='material'?materialOptions:key==='finish'?finishOptions:key==='costCurrency'?['GBP','EUR','USD','CAD','AUD','NZD','CHF','JPY']:key==='packaging'?['unknown','spooled','refill']:null;
    const input=document.createElement(options?'select':'input');
    if(options){for(const value of ['',...options]){const option=document.createElement('option');option.value=value;option.textContent=value||'Choose…';input.append(option)}}
    else if(['spools','weightGrams'].includes(key)){input.type='number';input.min='1';input.max=key==='spools'?'500':'10000';input.step='1';input.placeholder='Unknown'}
+   else if(key==='costPerRoll'){input.type='number';input.min='0';input.max='100000';input.step='0.01';input.placeholder='Unknown'}
    else if(key==='date')input.type='date';
    else {input.type='text';input.maxLength=key==='notes'?500:key==='product'?100:key==='hex'?7:80;if(key==='hex'){input.pattern='#[A-Fa-f0-9]{6}';input.placeholder='#RRGGBB'}}
-   input.required=!['spools','weightGrams','notes'].includes(key);input.value=row.spool[key]??'';input.disabled=!row.selected;
-   input.addEventListener('input',()=>{row.spool[key]=['spools','weightGrams'].includes(key)?input.value===''?null:Number(input.value):input.value;row.duplicate=FilamentImport.duplicates(row.spool,library.items.concat(rows.filter(other=>other!==row).map(other=>other.spool))).length>0;duplicate.hidden=!row.duplicate;duplicate.textContent='Possible duplicate — select only if this is additional stock.';changed()});
+   input.required=!['spools','weightGrams','notes','costPerRoll','costCurrency'].includes(key);input.value=row.spool[key]??'';input.disabled=!row.selected;
+   input.addEventListener('input',()=>{row.spool[key]=['spools','weightGrams','costPerRoll'].includes(key)?input.value===''?null:Number(input.value):input.value;row.duplicate=FilamentImport.duplicates(row.spool,library.items.concat(rows.filter(other=>other!==row).map(other=>other.spool))).length>0;duplicate.hidden=!row.duplicate;duplicate.textContent='Possible duplicate — select only if this is additional stock.';changed()});
    inputs.push(input);label.append(input);grid.append(label);
   }
   checkbox.onchange=()=>{row.selected=checkbox.checked;for(const input of inputs)input.disabled=!row.selected;changed()};

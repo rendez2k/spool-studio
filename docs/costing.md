@@ -1,0 +1,13 @@
+# Filament costing
+
+Add/edit spools now accepts optional cost per roll and currency. Blank means unknown; zero means free. Enter the price of one physical roll/refill after discounts, not the whole order or multipack price. If you include delivery/tax, apportion it consistently yourself. Supported currencies: GBP, EUR, USD, CAD, AUD, NZD, CHF, JPY. Costs sync privately with the library.
+
+CSV import accepts optional `costPerRoll,costCurrency` columns appended to the existing template. For example, `12.99,GBP`. Old CSVs still work. A separate `/filament-cost-import-template.csv` supplies the extended header. Email/image text only automatically recognises explicit lines such as `Cost per roll: GBP 12.99` or `Price per spool: £12.99`; ambiguous unit, order and bundle totals are not guessed. Review the fields before saving.
+
+For old purchases with a recorded line total, currency and original roll count, the estimator divides line total by original rolls. This uses the original inventory entry, never remaining rolls. Explicit per-roll values override the legacy calculation; explicitly clearing the cost leaves it unknown. Editing legacy costs exposes the inferred per-roll value for review.
+
+In Match a print, load a 3MF and enter the slicer's filament grams for each included colour. Use either the whole project or a plate consistently; the preview selector does not change the estimate. Include purge, supports and waste yourself. No automatic slicing or usage extraction is implemented. The formula is grams × cost per roll ÷ original grams per roll.
+
+The estimate follows an explicitly chosen filament or the top same-finish candidate. Different prices across matching purchase entries give a min–max range, not an arbitrary price. Any unpriced entry in that candidate group makes its cost unknown. Mixed-currency candidate groups are unknown; subtotals for different colour slots remain separated by currency. Incomplete estimates are labelled partial. Excluded slots do not contribute. This is filament cost only, not electricity, labour, failure allowance or a selling price. Manual usage inputs remain in memory for the loaded project and do not sync to the phone.
+
+Optional budgeting fallback: enable the assumed GBP price per kilogram (starts at £15/kg, editable). It is off by default, fills only missing purchase costs, and is visibly labelled assumed. It never saves an invented purchase price or converts currencies. Using per-kilogram pricing avoids assuming that every roll weighs 1 kg. Raw purchase CSV exports include the saved cost fields; grouped and shelf exports omit these fields rather than misrepresenting a group at its first purchase’s price.

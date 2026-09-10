@@ -1,0 +1,13 @@
+.cost-panel{margin:20px 0 28px;padding:20px 0;border-block:1px solid var(--line)}
+.cost-panel h4{font-size:1rem;margin:0 0 8px}
+.cost-panel>p{font-size:.875rem;max-width:78ch}
+.cost-slots{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:16px;margin:20px 0}
+.cost-slot label{display:block;font-size:.875rem;font-weight:600}
+.cost-slot input{display:block;margin-top:8px}
+.cost-value{display:block;font-size:.8125rem;margin-top:8px;color:var(--muted)}
+.cost-panel .cost-total{font-weight:650;color:var(--text);margin-bottom:12px}
+.cost-panel .cost-note{font-size:.8125rem}
+.cost-budget{display:flex;align-items:center;flex-wrap:wrap;gap:16px;margin-top:16px;font-size:.875rem}
+.cost-budget>label:first-child{display:flex;align-items:center;gap:8px;min-height:44px}
+.cost-budget input[type=checkbox]{width:18px;min-height:18px;flex:none}
+.cost-budget input[type=number]{display:block;max-width:180px;margin-top:6px}
