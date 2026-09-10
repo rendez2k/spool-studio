@@ -15,7 +15,7 @@ async function harness() {
   const database = postgresDatabase({ async query(query, values) {
     const result = await postgres.query(query, values);
     return { rows: result.rows, rowCount: result.affectedRows };
-  } });
+  }, async connect(){return {query:this.query,release(){}}} });
   const options = {
     publishableKey, origins: [origin], database: () => database,
     readPage: async () => '<html><head><!-- CLERK --></head><script id="dataset" type="application/json">{"status":"signedout","items":[]}</script></html>',
@@ -50,12 +50,23 @@ test("Netlify product lookup rejects forged identities and requires a real sessi
   } finally { await app.postgres.close(); }
 });
 
+test('Netlify saved-data erasure uses a dedicated transactional connection and leaves other accounts intact',async()=>{
+ const app=await harness();try{
+  for(const user of ['alice','bob'])assert.equal((await app.run('/api/library',user,{kind:'add',baseRevision:1,requestId:crypto.randomUUID(),spool})).status,200);
+  const current=await(await app.run('/api/account-export','alice')).json();
+  const result=await app.run('/api/account-data/erase','alice',{expectedAccountKey:'user_alice',libraryRevision:current.library.revision,phoneRevision:current.phoneBatch?.revision??0,requestId:crypto.randomUUID(),confirmation:'ERASE MY SAVED DATA'});
+  assert.equal(result.status,200);assert.equal(result.headers.get('netlify-cdn-cache-control'),'no-store');
+  assert.equal((await(await app.run('/api/library','alice')).json()).items.length,0);assert.equal((await(await app.run('/api/library','bob')).json()).items.length,1);
+ }finally{await app.postgres.close()}
+});
+
 test("new connections keep Gmail gated, bridge credentials isolated and QR redirects local",async()=>{
  const app=await harness();
  try{
   assert.equal((await app.run('/api/barcode-lookup',null,{code:'4002293401102',consent:true},{'oai-authenticated-user-id':'user_alice'})).status,401);
   assert.equal((await app.run('/api/gmail-config',null)).status,401);
   assert.equal((await app.run('/api/account-export',null,null,{'oai-authenticated-user-id':'user_alice'})).status,401);
+  assert.equal((await app.run('/api/account-data/erase',null,{confirmation:'ERASE MY SAVED DATA'},{'oai-authenticated-user-id':'user_alice'})).status,401);
   assert.equal((await (await app.run('/api/gmail-config','alice')).json()).enabled,false);
   assert.equal((await app.run('/api/spoolman-sync','alice',{sequence:Date.now(),spools:[]})).status,401);
   let state=await (await app.run('/api/library','alice',{kind:'add',baseRevision:1,requestId:crypto.randomUUID(),spool})).json();

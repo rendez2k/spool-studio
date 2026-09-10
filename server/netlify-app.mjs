@@ -5,6 +5,7 @@ import {handleSpoolmanSync} from './spoolman-sync.mjs';
 import {handleBarcodeLookup} from './barcode-lookup.mjs';
 import {gmailConfig} from './gmail-config.mjs';
 import {handleAccountExport} from './account-export.mjs';
+import {handleEraseData} from './erase-data.mjs';
 
 export function appOrigins(value) {
   const origins = (value || "").split(",").map(origin => origin.trim()).filter(Boolean);
@@ -65,8 +66,8 @@ export async function serveNetlify(request, { authenticate, database, readPage, 
       headers.set("oai-authenticated-user-id", userId);
       const authenticated = new Request(clean, { headers });
       const env = { DB: database() };
-      if (url.pathname === '/api/account-export') {
-        const result = await handleAccountExport(authenticated, env);
+      if (['/api/account-export', '/api/account-data/erase'].includes(url.pathname)) {
+        const result = await (url.pathname === '/api/account-export' ? handleAccountExport : handleEraseData)(authenticated, env);
         result.headers.set('Netlify-CDN-Cache-Control', 'no-store');
         for (const cookie of state.headers.getSetCookie()) result.headers.append('Set-Cookie', cookie);
         return result;

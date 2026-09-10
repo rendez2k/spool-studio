@@ -84,7 +84,7 @@ test('local bridge never controls printer, forwards only IDs and absolute weight
 test('the printed 20 mm QR decodes at 203 dpi to the private reel URL',()=>{
  const context=vm.createContext({});vm.runInContext(readFileSync(new URL('../out/vendor/qrcode.js',import.meta.url),'utf8'),context);
  const url=core.url('https://spool-studio.uk',crypto.randomUUID()),code=context.qrcode(0,'M');code.addData(url);code.make();
- const svg=code.createSvgTag({cellSize:4,margin:16,scalable:true}),rendered=new Resvg(svg,{fitTo:{mode:'width',value:160}}).render();
+ const svg=code.createSvgTag({cellSize:4,margin:16,scalable:true}),rendered=new Resvg(svg,{background:'#ffffff',fitTo:{mode:'width',value:160}}).render();
  const pixels=rendered.pixels,grey=new Uint8ClampedArray(rendered.width*rendered.height);
  for(let index=0;index<grey.length;index++)grey[index]=pixels[index*4+3]===0?255:pixels[index*4];
  const bitmap=new BinaryBitmap(new HybridBinarizer(new RGBLuminanceSource(grey,rendered.width,rendered.height)));

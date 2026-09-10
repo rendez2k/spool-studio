@@ -75,6 +75,10 @@ References: [Gmail scope classification](https://developers.google.com/workspace
 
 App & device → Your saved data downloads private JSON from the authenticated `/api/account-export` endpoint. It includes unfiltered stock, used reels, stable IDs, import fingerprints, and the latest phone batch, but no bridge key/hash or sign-in credentials. The two stored records retain separate revisions and are not an atomic restore snapshot. Reading an empty account does not create records. Clerk profile, support correspondence, provider logs and local-device data require separate access handling; the download is not claimed to fulfil every possible access request by itself.
 
+App & device → Erase saved application data requires a fresh count/revision review and the exact typed phrase. A dedicated Postgres connection locks both account rows and clears their content in one transaction, removing import fingerprints, reel details and bridge credentials. Both revision counters advance (including for an empty account), blocking delayed pre-erasure writes. The next permanent spool number remains monotonic. Retries use the same request ID; a changed library or phone batch requires another review. No real user's data was erased during development; tests use isolated fixtures.
+
+This is not full account deletion: the Clerk login and minimal account reference/revision/next-number/request/timestamp metadata remain. Downloaded files, locally saved phone batches, NFC tags, support correspondence and provider logs/backups need separate handling. Complete account removal and backup/log retention remain operator work. No unverified purge deadline is promised.
+
 Operator confirmed by the owner: Robin Edwards, contact hello@productkit.digital.
 
 Technical disclosure now includes physical spool/location/weight records, QR ownership, bridge credential handling, external barcode queries and the staged Gmail flow. The public notice remains marked draft: an assistant's technical review is not professional legal advice or a completed compliance review.

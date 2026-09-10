@@ -12,7 +12,7 @@ export function initialiseReels(data) {
   if (Array.isArray(data.reels)) return;
   const total = data.items.reduce((sum, item) => sum + (Number.isInteger(item.spools) ? item.spools : 0), 0);
   if (total > maxReels) throw Error('This library exceeds the 5000 physical-reel limit.');
-  data.reels = []; data.nextReelNumber = 1;
+  data.reels = []; data.nextReelNumber = data.nextReelNumber || 1;
   for (const item of data.items) addReels(data, item);
 }
 export function updateReel(data, input) {

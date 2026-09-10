@@ -31,7 +31,9 @@ test('every app entrypoint exposes privacy and contact without weakening private
  }
  const notice=await (await worker.fetch(new Request('https://test.example/privacy.html'),{})).text();
  assert.match(notice,/SHA-256/);assert.match(notice,/project name/);
- assert.match(notice,/no automatic expiry or self-service account deletion/);
+ assert.match(notice,/no automatic inventory expiry/);
+ assert.match(notice,/erasure control clears application records, not your sign-in account/);
+ assert.match(notice,/revision counters, erasure request identifier/);
  assert.match(notice,/does not delete your server-side library/);
  assert.match(notice,/legitimate interests/);assert.match(notice,/ico.org.uk\/make-a-complaint/);
 });
