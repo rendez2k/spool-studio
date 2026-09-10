@@ -60,18 +60,20 @@ The free provider has a shared allowance. Per-process pacing reduces bursts; pro
 
 References: [API setup](https://www.upcitemdb.com/wp/docs/main/development/getting-started/), [plans](https://www.upcitemdb.com/wp/docs/main/development/plan/), [terms](https://devs.upcitemdb.com/termsofservice).
 
-## Gmail: staged, disabled by default
+## Gmail: private test, disabled for other accounts
 
 Ordinary Google login remains identity-only. The optional importer uses a separate browser OAuth token client requesting only `gmail.readonly`, on explicit user interaction. Search shows at most 20 message headers; only 1–10 selected message bodies are subsequently requested. Only plain-text bodies are parsed. Attachments and HTML-only messages are unsupported. Tokens and original messages are not sent to the app server or stored in browser storage. Reviewed spool fields still pass through the existing consented importer.
 
 Before enabling a test:
 
-1. Create a dedicated Google OAuth **web** client for Gmail (do not reuse Clerk's sign-in client), enable the Gmail API, configure the correct JavaScript origin, consent screen and test-user access.
+1. Create a dedicated Google OAuth **web** client in a separate testing project for Gmail (do not reuse or change Clerk's production sign-in project), enable the Gmail API, configure the correct JavaScript origin, consent screen and test-user access.
 2. Configure Netlify function environment `GOOGLE_GMAIL_CLIENT_ID` with its public client ID and `GMAIL_TEST_USERS` with the comma-separated Clerk IDs of approved testers. Do not put IDs or secrets in public source.
 3. Test with a consenting user through Import → Import from Gmail. Handle rejected consent, expired token, switching accounts, cancellation, HTML-only emails and duplicate imports.
 4. Keep `GMAIL_PUBLIC_ENABLED` unset/false until Google's restricted-scope verification, required privacy/limited-use disclosures and any applicable assessment are complete. The public switch is an operator release decision, not something the app enables automatically.
 
 The code and synthetic tests do not establish Google approval or real-mailbox readiness. No background inbox scanning or refresh token is implemented.
+
+On 10 September 2026 the owner approved a private importer test. A separate Google project was created with Testing audience, one explicitly listed Google tester, a web client restricted to the canonical app origin, and only the Gmail read-only scope. Production function settings allow only the approved app account; the public switch remains false. Project/client/tester identifiers remain in private operator configuration, not this repository. Gmail mailbox consent and end-to-end message import still require the tester's separate interaction. Existing production Google login is unchanged.
 
 References: [Gmail scope classification](https://developers.google.com/workspace/gmail/api/auth/scopes), [browser token model](https://developers.google.com/identity/oauth2/web/guides/use-token-model).
 
