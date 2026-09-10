@@ -1,5 +1,14 @@
 [
   {
+    "version": "1.8.1",
+    "date": "2026-09-10",
+    "title": "Printer setup stays put",
+    "changes": [
+      "Local bridge setup no longer closes or reopens during automatic status updates or when you return to the window.",
+      "Creating a printer key keeps the configuration download visible while you enter your addresses."
+    ]
+  },
+  {
     "version": "1.8.0",
     "date": "2026-09-10",
     "title": "One connected workspace",

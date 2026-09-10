@@ -1,6 +1,6 @@
 'use strict';
 {
- const node=id=>document.getElementById(id);let library=null,state=null,channel=null,review=null,busy=false,secret='',pending=null,sequence=0,renderedTools='';
+ const node=id=>document.getElementById(id);let library=null,state=null,channel=null,review=null,busy=false,secret='',pending=null,sequence=0,renderedTools='',setupInitialized=false;
  const message=text=>node('printer-message').textContent=text;
  function invalidate(){review=null;pending=null;node('printer-confirm').hidden=true;node('printer-approve').checked=false;controls()}
  function selection(){
@@ -36,7 +36,7 @@
   const response=await fetch(path,{method:body?'POST':'GET',credentials:'same-origin',cache:'no-store',redirect:'error',signal:AbortSignal.timeout(15000),headers:body?{'Content-Type':'application/json'}:{},body:body?JSON.stringify(body):undefined});
   const value=await response.json();if(!response.ok){if(response.status===401)clear();throw Error(value.error||'Could not confirm the printer request.')}return value;
  }
- function clear(){sequence++;renderedTools='';channel=null;library=null;state=null;secret='';review=null;pending=null;node('printer-work').hidden=true;node('printer-download').hidden=true;node('printer-tools').replaceChildren();node('printer-item').replaceChildren();node('printer-reel').replaceChildren();node('printer-profile').textContent='';node('printer-result').textContent='';node('printer-confirm').hidden=true;controls()}
+ function clear(){sequence++;renderedTools='';setupInitialized=false;channel=null;library=null;state=null;secret='';review=null;pending=null;node('printer-work').hidden=true;node('printer-download').hidden=true;node('printer-tools').replaceChildren();node('printer-item').replaceChildren();node('printer-reel').replaceChildren();node('printer-profile').textContent='';node('printer-result').textContent='';node('printer-confirm').hidden=true;controls()}
  function renderStatus(){
   if(review&&(!state.status?.tools[channel]||!PrinterCore.same(review.before,state.status.tools[channel]))){invalidate();message('The tool changed. Review the new settings before sending.')}
   const signature=JSON.stringify([state.status?.tools,channel]);if(signature===renderedTools){controls();return}renderedTools=signature;node('printer-tools').replaceChildren();
@@ -48,7 +48,7 @@
    const next=await api('/api/printer');if(current!==sequence)return;
    if(library&&library.accountKey!==next.accountKey){clear();message('Account changed. Reload this page to choose from the new library.');return}
    if(!library||full){const selectedId=node('printer-item').value;const updated=await api('/api/library');if(current!==sequence)return;if(updated.accountKey!==next.accountKey){clear();throw Error('Account changed. Reload the page.')};library=updated;populate();const initial=new URLSearchParams(location.search).get('item');if(!selectedId&&initial&&library.items.some(item=>item.id===initial)){node('printer-item').value=initial;reels();const reelId=new URLSearchParams(location.search).get('reel');if(library.reels?.some(reel=>reel.id===reelId&&reel.itemId===initial&&!reel.used))node('printer-reel').value=reelId}}
-   state=next;node('printer-work').hidden=!state.enabled;node('printer-setup').open=!state.enabled;renderStatus();
+   state=next;node('printer-work').hidden=!state.enabled;if(!setupInitialized){node('printer-setup').open=!state.enabled;setupInitialized=true}renderStatus();
   }catch(error){message(error.message);controls()}
  }
  async function action(body){
@@ -56,7 +56,7 @@
   try{
    const result=await api('/api/printer',{...body,expectedAccountKey:account,baseRevision:state?.revision||0,requestId:body.requestId||crypto.randomUUID()});
    if(result.accountKey!==account){clear();throw Error('Account changed. Nothing will be resubmitted.')}
-   if(result.token){secret=result.token;node('printer-download').hidden=false;message('Key created. Download the private configuration on the bridge computer.')}else if(body.kind==='create')message('Key created, but its download was lost. Replace it to get a new configuration.');
+   if(result.token){secret=result.token;node('printer-setup').open=true;node('printer-download').hidden=false;message('Key created. Download the private configuration on the bridge computer.')}else if(body.kind==='create')message('Key created, but its download was lost. Replace it to get a new configuration.');
    if(body.kind==='revoke'){secret='';node('printer-download').hidden=true;message('Printer key revoked. Already-sent commands cannot be recalled.')}
    if(body.kind==='send'){message('Request accepted. See Latest request for the result.');invalidate()}
    state=result;
