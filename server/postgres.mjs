@@ -1,6 +1,13 @@
 import {eraseSavedData} from './erase-data.mjs';
+import {communityRollsQuery} from './community-stats.mjs';
 export function postgresDatabase(client) {
   return {
+    async communityRollCount() {
+      const result = await client.query(communityRollsQuery);
+      const value = result.rows[0]?.rolls;
+      if (typeof value !== 'string' || !/^\d+$/.test(value)) throw Error('Invalid community count.');
+      return Number(value);
+    },
     async eraseSavedData(input) {
       const connection = await client.connect();
       try {return await eraseSavedData(connection, input);} finally {connection.release();}

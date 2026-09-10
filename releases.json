@@ -1,5 +1,13 @@
 [
   {
+    "version": "1.1.1",
+    "date": "2026-09-10",
+    "title": "Our filament community",
+    "changes": [
+      "App & device now shows the combined available-roll count across Spool Studio accounts. Refills count; used-up rolls and unknown quantities do not. Only the total is shared, never individual libraries."
+    ]
+  },
+  {
     "version": "1.1.0",
     "date": "2026-09-10",
     "title": "Spool prices and filament cost estimates",
