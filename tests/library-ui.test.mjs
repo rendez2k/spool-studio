@@ -26,7 +26,7 @@ test("new user can add, edit, mark used and undo without inheriting local owner 
   const call = async (method = "GET", body) => handleLibrary(new Request("https://test.example/api/library", { method, headers: { "oai-authenticated-user-id": actor, origin: "https://test.example", "content-type": "application/json" }, body }), { DB });
   get("dataset").textContent = JSON.stringify(await (await call()).json());
   const context = vm.createContext({
-    FilamentMatcher: require("../out/matcher.js"), FilamentNfc: require("../out/nfc-codec.js"),
+    SpoolCollection: require("../out/collection-core.js"), FilamentMatcher: require("../out/matcher.js"), FilamentNfc: require("../out/nfc-codec.js"),
     document: { getElementById: get, querySelector: node, querySelectorAll: () => [], body: node(), createElement: node, addEventListener() {}, hidden: false },
     window: { addEventListener() {} }, matchMedia: () => ({ matches: false }), Blob, URL, AbortSignal, crypto,
     location: { protocol: "https:", href: "https://test.example/" }, setTimeout() {},

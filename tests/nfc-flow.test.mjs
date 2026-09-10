@@ -61,6 +61,7 @@ async function main(){
  const get=id=>{if(!elements.has(id))elements.set(id,node());return elements.get(id)};
  get('dataset').textContent=JSON.stringify({status:'complete',items:require('./fixtures/inventory.cjs')});get('from').value='2026-03-08';get('to').value='2026-09-08';
 const context=vm.createContext({FilamentShopping:require('../out/shopping.js'),testSeeds:require('./fixtures/matcher-projects.json'),FilamentNfc:codec,qrcode,FilamentMatcher:require('../out/matcher.js'),document:{getElementById:get,querySelector:node,querySelectorAll:()=>[],body:node(),createElement:node},localStorage:{getItem:()=>null,setItem(){}},matchMedia:()=>({matches:false}),Blob,URL,location:{protocol:'https:',href:'https://test.example/'},setTimeout(){}});
+ context.SpoolCollection=require('../out/collection-core.js');
  const run=code=>vm.runInContext(code,context);run(html.match(/<script>\s*('use strict';[\s\S]*?)<\/script>/)[1]);run('matchProjects=testSeeds.map(seed=>FilamentMatcher.parseSettings(seed.settings,seed.name));renderMatcher()');assert(get('nfc-send').disabled);
  assert(get('results').innerHTML.includes('Search Amazon UK (paid link)'));assert(get('results').innerHTML.includes('As an Amazon Associate I earn from qualifying purchases.'));
  run('matchReport[0].slots.forEach(({required,result})=>{required.nfcChoice=result.same[0]?.row.id});renderMatcher();sendNfcToPhone()');

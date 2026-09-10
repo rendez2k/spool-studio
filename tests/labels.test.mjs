@@ -55,7 +55,7 @@ test('label interactions print paired copies, clear print staging, block stale s
  const elements=new Map(),events={};
  function element(){
   const classes=new Set();
-  return {value:'',hidden:false,disabled:false,children:[],textContent:'',style:{setProperty(){}},classList:{add:value=>classes.add(value),remove:value=>classes.delete(value),contains:value=>classes.has(value)},
+  return {value:'',hidden:false,disabled:false,children:[],textContent:'',parentElement:{firstChild:{textContent:''}},style:{setProperty(){}},classList:{add:value=>classes.add(value),remove:value=>classes.delete(value),contains:value=>classes.has(value)},
    clientHeight:100,clientWidth:200,scrollHeight:overflowing?200:50,scrollWidth:180,
    get firstChild(){return this.children[0]},append(...children){this.children.push(...children)},replaceChildren(...children){this.children=children},setAttribute(){},focus(){},addEventListener(name,handler){this[name]=handler}};
  }
@@ -80,4 +80,13 @@ test('label interactions print paired copies, clear print staging, block stale s
  get('label-size').value='76x50';get('label-settings').input();get('label-settings').onsubmit({preventDefault(){}});
  assert.equal(printCount,4);assert.match(head.children[0].textContent,/size: 76mm 50mm; margin: 0/);
  assert.equal(body.children[0].children.length,4);events.afterprint();
+ let selected={...current,slots:[{...current.slots[0],position:17,shelf:3,shelfSlot:1}]};
+ context.window.getSelectedLabelSnapshot=()=>selected;
+ context.window.openSelectedLabels();
+ assert.equal(get('label-heading').textContent,'Labels for selected entries');
+ assert.equal(get('label-last').value,'1');
+ assert.match(get('label-preview').children[0].children[0].textContent,/#17/);
+ selected={...selected,slots:[]};events['collection-selection-change']();
+ assert.equal(get('label-print').disabled,true);
+ get('label-settings').onsubmit({preventDefault(){}});assert.equal(printCount,4);
 });

@@ -2,7 +2,8 @@
 {
  const node=id=>document.getElementById(id);
  const panel=node('label-panel'),trigger=node('open-labels');
- let snapshot=null,planned=[],previewIndex=0;
+ let snapshot=null,planned=[],previewIndex=0,selectionSource=false;
+ const sourceSnapshot=()=>selectionSource?window.getSelectedLabelSnapshot():window.getShelfLabelSnapshot();
  panel.innerHTML=`<div class="label-heading"><h3 id="label-heading" tabindex="-1">Labels for your shelf</h3><button id="close-labels" type="button">Close labels</button></div>
  <p class="label-hint">Print matching labels for each spool and its box. SP numbers stay with the reel; shelf positions can change. <a href="/reels.html">Assign permanent IDs or manage individual spools</a> before printing QR labels.</p>
  <div class="label-workspace"><form id="label-settings"><div class="label-fields">
@@ -34,7 +35,7 @@
   }
   return element;
  }
- function stale(){return !snapshot||SpoolLabels.signature(snapshot)!==SpoolLabels.signature(window.getShelfLabelSnapshot())}
+ function stale(){return !snapshot||SpoolLabels.signature(snapshot)!==SpoolLabels.signature(sourceSnapshot())}
  function settings(){const [width,height]=SpoolLabels.dimensions(node('label-size').value,node('label-width').value,node('label-height').value);return {width,height,start:Number(node('label-first').value),end:Number(node('label-last').value),copies:Number(node('label-copies').value)}}
  function sizeElements(width,height){
   for(const element of [printRoot,node('label-preview')]){element.style.setProperty('--label-width',width+'mm');element.style.setProperty('--label-height',height+'mm')}
@@ -45,7 +46,7 @@
   node('label-width').disabled=node('label-height').disabled=node('label-custom').hidden;node('label-print').disabled=true;
   planned=[];node('label-preview').replaceChildren();node('label-page').textContent='';node('label-prev').disabled=node('label-next').disabled=true;
   try{
-   if(stale())throw Error('The shelf changed. Choose “Use current shelf” to refresh the numbers before printing.');
+   if(stale())throw Error('The library, selection or shelf changed. Refresh the label selection before printing.');
    const options=settings();planned=SpoolLabels.plan(snapshot,options);
    if(node('label-qr').checked&&planned.some(row=>row.reelId)&&(options.width<60||options.height<30))throw Error('QR labels need at least 60 × 30 mm. Choose a larger size or untick QR links.');
    sizeElements(options.width,options.height);
@@ -56,12 +57,19 @@
   }catch(error){node('label-status').textContent=error.message}
  }
  function current(){
-  snapshot=structuredClone(window.getShelfLabelSnapshot());previewIndex=0;
+  snapshot=structuredClone(sourceSnapshot());previewIndex=0;
+  let scope=node('label-scope');if(!scope){scope=document.createElement('p');scope.id='label-scope';scope.className='label-hint';node('label-settings').prepend(scope)}
+  scope.textContent=selectionSource?'Available rolls from selected entries only. Used-up rolls are excluded. Shelf positions come from your entire available library using the Colour shelf order and shelf size, not the Collection filters or date sort.':'Shelf positions follow the current filtered Colour shelf.';
+  node('label-heading').textContent=selectionSource?'Labels for selected entries':'Labels for your shelf';
+  node('label-refresh').textContent=selectionSource?'Use current selection':'Use current shelf';
+  node('label-first').parentElement.firstChild.textContent=selectionSource?'First selected roll':'First shelf position';
+  node('label-last').parentElement.firstChild.textContent=selectionSource?'Last selected roll':'Last shelf position';
   node('label-first').value='1';node('label-last').value=String(Math.min(snapshot.slots.length,Math.floor(500/Number(node('label-copies').value))));
   node('label-first').max=node('label-last').max=String(snapshot.slots.length);render();
  }
- trigger.onclick=()=>{panel.hidden=!panel.hidden;trigger.setAttribute('aria-expanded',String(!panel.hidden));if(!panel.hidden){current();node('label-heading').focus()}};
- node('close-labels').onclick=()=>{panel.hidden=true;trigger.setAttribute('aria-expanded','false');trigger.focus()};
+ trigger.onclick=()=>{selectionSource=false;panel.hidden=!panel.hidden;trigger.setAttribute('aria-expanded',String(!panel.hidden));if(!panel.hidden){current();node('label-heading').focus()}};
+ window.openSelectedLabels=()=>{selectionSource=true;panel.hidden=false;trigger.setAttribute('aria-expanded','true');current();node('label-heading').focus()};
+ node('close-labels').onclick=()=>{panel.hidden=true;trigger.setAttribute('aria-expanded','false');(selectionSource?node('collection-labels'):trigger).focus()};
  node('label-refresh').onclick=current;
  node('label-settings').addEventListener('input',()=>{previewIndex=0;render()});
  node('label-prev').onclick=()=>{previewIndex--;render()};node('label-next').onclick=()=>{previewIndex++;render()};
@@ -77,5 +85,6 @@
   }catch(error){cleanup();node('label-status').textContent=error.message}
  };
  window.addEventListener('afterprint',cleanup);window.addEventListener('pagehide',cleanup);
+ window.addEventListener('collection-selection-change',()=>{if(!panel.hidden&&stale())render()});
  const observer=new MutationObserver(()=>{if(!panel.hidden&&stale())render()});observer.observe(node('results'),{childList:true});
 }

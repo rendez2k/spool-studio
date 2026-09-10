@@ -14,6 +14,7 @@ function libraryControls(){
  $('refresh-library').disabled=libraryBusy||libraryRefreshing;
  document.querySelectorAll('[data-use],[data-edit]').forEach(button=>button.disabled=libraryBusy);
  window.SpoolAssist?.controls();
+ window.CollectionTools?.controls();
 }
 function applyLibrary(value){
  if(value.accountKey!==dataset.accountKey){

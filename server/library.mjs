@@ -63,14 +63,22 @@ export async function handleLibrary(request, env) {
       if (!Number.isSafeInteger(input.baseRevision) || input.baseRevision < 1 || typeof input.requestId !== "string" || !/^[a-zA-Z0-9-]{16,64}$/.test(input.requestId)) throw Error("Invalid library request.");
     } catch (error) { return json({ error: error.message }, 400); }
     if (input.kind === "import" && input.expectedAccountKey !== userId) return json({ error: "The signed-in account changed. Reopen the importer before saving." }, 409);
-    if (['reel','initialise-reels','bridge-create','bridge-revoke','spoolman-mappings'].includes(input.kind) && input.expectedAccountKey !== userId) return json({error:'The signed-in account changed. Refresh before saving.'},409);
+    if (['bulk-edit','reel','initialise-reels','bridge-create','bridge-revoke','spoolman-mappings'].includes(input.kind) && input.expectedAccountKey !== userId) return json({error:'The signed-in account changed. Refresh before saving.'},409);
     const row = await getLibrary(env.DB, userId);
     if (row.request_id === input.requestId) return json(libraryView(row, userId));
     if (row.revision !== input.baseRevision) return json({ error: "Your library changed elsewhere. Refresh the library, then try again; your form has been kept." }, 409);
     const data = JSON.parse(row.payload);
     let bridgeToken;
     try {
-      if (input.kind === 'initialise-reels') {
+      if (input.kind === 'bulk-edit') {
+        const allowed = ['brand','product','material','finish','packaging','date','notes'];
+        if (input.reviewed !== true || !Array.isArray(input.ids) || !input.ids.length || input.ids.length > 1000 || new Set(input.ids).size !== input.ids.length || input.ids.some(id => typeof id !== 'string')) throw Error('Review the selected entries before saving.');
+        if (!input.patch || typeof input.patch !== 'object' || Array.isArray(input.patch) || !Object.keys(input.patch).length || Object.keys(input.patch).some(key => !allowed.includes(key))) throw Error('Choose supported fields to change. Counts, weights and spool IDs cannot be bulk edited.');
+        const validated = validateSpool({brand:'Example',product:'PLA',material:'PLA',finish:'standard',packaging:'unknown',date:'2026-01-01',notes:'',colour:'White',hex:'#FFFFFF',spools:1,weightGrams:1000,...input.patch});
+        const selected = input.ids.map(id => data.items.find(item => item.id === id));
+        if (selected.some(item => !item)) throw Error('A selected entry is no longer in your library. Refresh and select again.');
+        for (const item of selected) for (const key of Object.keys(input.patch)) item[key] = validated[key];
+      } else if (input.kind === 'initialise-reels') {
         initialiseReels(data);
       } else if (input.kind === 'reel') {
         updateReel(data, input.reel);
@@ -91,14 +99,15 @@ export async function handleLibrary(request, env) {
           try { return validateSpool(spool); }
           catch (error) { error.entryIndex = index; throw error; }
         });
-        data.items.push(...imported.map((fields, index) => ({ ...fields, id: "spool-" + input.requestId + "-" + index, quantity: fields.spools, form: fields.packaging, sourceProduct: "", retailer: "Reviewed import", order: "", messageId: "", lineTotal: null, currency: "", used: false })));
+        const addedAt = new Date().toISOString();
+        data.items.push(...imported.map((fields, index) => ({ ...fields, addedAt, id: "spool-" + input.requestId + "-" + index, quantity: fields.spools, form: fields.packaging, sourceProduct: "", retailer: "Reviewed import", order: "", messageId: "", lineTotal: null, currency: "", used: false })));
         for (const item of data.items.slice(-imported.length)) addReels(data, item);
         data.importHashes = [...(data.importHashes || []), input.sourceHash];
       } else if (input.kind === "add" || input.kind === "edit") {
         const fields = validateSpool(input.spool);
         if (input.kind === "add") {
           if (data.items.length >= 1000) throw Error("This library has reached its 1000-entry limit.");
-          data.items.push({ ...fields, id: "spool-" + input.requestId, quantity: fields.spools, form: fields.packaging, sourceProduct: "", retailer: "Added manually", order: "", messageId: "", lineTotal: null, currency: "", used: false });
+          data.items.push({ ...fields, addedAt: new Date().toISOString(), id: "spool-" + input.requestId, quantity: fields.spools, form: fields.packaging, sourceProduct: "", retailer: "Added manually", order: "", messageId: "", lineTotal: null, currency: "", used: false });
           addReels(data, data.items.at(-1));
         } else {
           const item = data.items.find(item => item.id === input.id);
