@@ -1,17 +1,18 @@
 'use strict';
 {
  const node=id=>document.getElementById(id),scope='https://www.googleapis.com/auth/gmail.readonly';
- let token='',expires=0,config=null,tokenClient=null,sequence=0,busy=false,owner='',controller=null,readyPromise=null,consentTimer=null;
+ let token='',expires=0,config=null,tokenClient=null,preparedOwner='',sequence=0,busy=false,owner='',controller=null,readyPromise=null,consentTimer=null;
  const status=text=>node('gmail-status').textContent=text;
  function controls(){
   const ready=Boolean(library)&&!saving&&!reading&&!busy;
-  node('gmail-prepare').disabled=!ready;node('gmail-connect').disabled=!ready||!tokenClient;
+  node('gmail-prepare').disabled=!ready;node('gmail-connect').disabled=!ready||!tokenClient||preparedOwner!==library?.accountKey;
   node('gmail-search').disabled=node('gmail-query').disabled=node('gmail-search-kind').disabled=!ready||!token;
   node('gmail-read').disabled=!ready||!token;node('gmail-disconnect').disabled=!token;
   node('gmail-cancel').hidden=!busy;node('gmail-results').querySelectorAll('input').forEach(input=>input.disabled=!ready);
  }
- function clear(){
+ function clear(resetConfiguration=false){
   sequence++;controller?.abort();controller=null;clearTimeout(consentTimer);token='';expires=0;owner='';busy=false;
+  if(resetConfiguration){config=null;tokenClient=null;preparedOwner='';node('gmail-connect').hidden=true}
   node('gmail-results').replaceChildren();node('gmail-query').value=SpoolGmail.defaultQuery;node('gmail-search-kind').value='orders';controls();
  }
  function valid(current){return current===sequence&&library?.accountKey===owner}
@@ -40,19 +41,25 @@
   return readyPromise;
  }
  node('gmail-prepare').onclick=async()=>{
-  if(busy||!library||saving||reading)return;busy=true;controls();
+  if(busy||!library||saving||reading)return;
+  clear(true);const current=sequence,accountKey=library.accountKey,isCurrent=()=>current===sequence&&library?.accountKey===accountKey;
+  busy=true;controller=new AbortController();controls();
   try{
-   await account();const response=await fetch('/api/gmail-config',{credentials:'same-origin',redirect:'error',cache:'no-store',signal:AbortSignal.timeout(15000)});
+   await account();if(!isCurrent())return;
+   const response=await fetch('/api/gmail-config',{credentials:'same-origin',redirect:'error',cache:'no-store',signal:AbortSignal.any([controller.signal,AbortSignal.timeout(15000)])});
    if(!response.ok)throw Error('Gmail setup is unavailable. Try again after signing in.');
-   config=await response.json();
-   if(!config.enabled){status('Direct Gmail import is not enabled for this account yet. Google consent setup and verification are still required. Use pasted text, CSV or images meanwhile.');return}
+   const available=await response.json();if(!isCurrent())return;
+   if(!available.enabled){status('Direct Gmail import is not enabled for this account yet. Google consent setup and verification are still required. Use pasted text, CSV or images meanwhile.');return}
    await loadGoogle();
+   if(!isCurrent())return;await account();if(!isCurrent())return;
+   config=available;preparedOwner=accountKey;
    tokenClient=window.google.accounts.oauth2.initTokenClient({client_id:config.clientId,scope,include_granted_scopes:false,callback:()=>{}});
    node('gmail-connect').hidden=false;status(config.testing?'Gmail test access is ready. Connect and approve read-only access in Google.':'Ready. Connect Gmail to request separate read-only permission.');
-  }catch(error){status(error.message)}finally{busy=false;controls()}
+  }catch(error){if(isCurrent())status(error.message)}finally{if(isCurrent()){busy=false;controls()}}
  };
  node('gmail-connect').onclick=()=>{
   if(!tokenClient||busy||!library||saving||reading)return;
+  if(preparedOwner!==library.accountKey){clear(true);status('The account changed. Check Gmail availability again.');return}
   clear();owner=library.accountKey;const current=sequence;busy=true;controls();status('Waiting for Google permission…');
   consentTimer=setTimeout(()=>{if(valid(current)){clear();status('Google permission timed out. Try connecting again.')}},120000);
   tokenClient=window.google.accounts.oauth2.initTokenClient({client_id:config.clientId,scope,include_granted_scopes:false,callback:value=>{
@@ -93,7 +100,7 @@
  };
  node('gmail-cancel').onclick=()=>{sequence++;controller?.abort();clearTimeout(consentTimer);busy=false;controls();status('Cancelled. No import was saved.')};
  node('gmail-search-kind').onchange=node('gmail-query').oninput=()=>{node('gmail-results').replaceChildren();status('Search changed. Choose Find up to 20 emails to load fresh results.')};
- node('gmail-disconnect').onclick=()=>{const previous=token;clear();status('Disconnected on this page. Revoking Gmail permission…');window.google?.accounts?.oauth2.revoke(previous,result=>status(result.successful?'Gmail permission revoked. Copied import text remains until you clear it.':'Page disconnected. You can remove access in your Google Account permissions.'))};
- window.GmailImport={controls,clear:()=>{clear();status('Gmail session cleared.')}};
- window.addEventListener('pagehide',clear);window.addEventListener('focus',controls);controls();
+ node('gmail-disconnect').onclick=()=>{const previous=token;clear(true);const current=sequence,accountKey=library?.accountKey;status('Disconnected on this page. Revoking Gmail permission…');window.google?.accounts?.oauth2.revoke(previous,result=>{if(current===sequence&&library?.accountKey===accountKey)status(result.successful?'Gmail permission revoked. Copied import text remains until you clear it.':'Page disconnected. You can remove access in your Google Account permissions.')})};
+ window.GmailImport={controls,clear:()=>{clear(true);status('Gmail session cleared.')}};
+ window.addEventListener('pagehide',()=>clear(true));window.addEventListener('focus',controls);controls();
 }

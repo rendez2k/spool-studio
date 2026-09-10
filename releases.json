@@ -1,5 +1,13 @@
 [
   {
+    "version": "1.4.2",
+    "date": "2026-09-10",
+    "title": "Safer Gmail connection setup",
+    "changes": [
+      "Cancelled or outdated Gmail setup can no longer reappear after switching accounts or leaving the page. Connections are prepared for the current account, and disconnect clears that preparation."
+    ]
+  },
+  {
     "version": "1.4.1",
     "date": "2026-09-10",
     "title": "Shared barcode lookup protection",

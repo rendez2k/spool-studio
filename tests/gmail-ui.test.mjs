@@ -5,16 +5,16 @@ import {readFileSync} from 'node:fs';
 import {createRequire} from 'node:module';
 const core=createRequire(import.meta.url)('../out/gmail-core.js');
 function harness(){
- const elements=new Map(),events={},calls=[];let clientConfig,resolveSlow,slow=false,currentAccount='user_alice',enabled=true,scopeGranted=true;
+ const elements=new Map(),events={},calls=[];let clientConfig,resolveSlow,resolveSetup,slowSetup=false,requests=0,slow=false,currentAccount='user_alice',enabled=true,scopeGranted=true;
  function element(){return {children:[],value:'',textContent:'',disabled:false,hidden:false,checked:false,append(...values){this.children.push(...values)},replaceChildren(...values){this.children=values},focus(){},remove(){},querySelectorAll(selector){return this.children.flatMap(child=>[...(child.type==='checkbox'&&(selector!=='input:checked'||child.checked)?[child]:[]),...child.querySelectorAll(selector)])}}}
  const node=id=>{if(!elements.has(id))elements.set(id,element());return elements.get(id)};
  node('gmail-connect').hidden=true;
- const oauth2={initTokenClient(config){clientConfig=config;return {requestAccessToken(){}}},hasGrantedAllScopes(){return scopeGranted},revoke(token,callback){assert.equal(token,'test-token');callback({successful:true})}};
+ const oauth2={initTokenClient(config){clientConfig=config;return {requestAccessToken(){requests++}}},hasGrantedAllScopes(){return scopeGranted},revoke(token,callback){assert.equal(token,'test-token');callback({successful:true})}};
  const context=vm.createContext({library:{accountKey:'user_alice'},saving:false,reading:false,rows:[],api:async()=>({accountKey:currentAccount}),changed(){},loseAccount(){context.library=null;context.window.GmailImport.clear()},SpoolGmail:core,
   window:{google:{accounts:{oauth2}},addEventListener(name,callback){events[name]=callback}},document:{getElementById:node,createElement:element,head:element()},Date,Uint8Array,TextDecoder,AbortController,AbortSignal,setTimeout,clearTimeout,
   fetch:async(url,options)=>{
    calls.push({url,options});
-   if(url==='/api/gmail-config')return Response.json({enabled,clientId:'123-test.apps.googleusercontent.com',testing:true});
+   if(url==='/api/gmail-config'){const reply={enabled,clientId:'123-test.apps.googleusercontent.com',testing:true};if(slowSetup)await new Promise(resolve=>resolveSetup=resolve);return Response.json(reply)}
    assert(url.startsWith('https://gmail.googleapis.com/gmail/v1/users/me/'));assert.equal(options.credentials,'omit');assert.equal(options.redirect,'error');assert.equal(options.headers.Authorization,'Bearer test-token');
    if(url.includes('messages?'))return Response.json({messages:[{id:'abc'}]});
    if(url.includes('format=metadata'))return Response.json({payload:{headers:[{name:'Subject',value:'Synthetic filament order'}]}});
@@ -22,7 +22,7 @@ function harness(){
    return Response.json({payload:{mimeType:'text/plain',body:{data:Buffer.from('SUNLU PLA Orange 1 kg\nQuantity: 1').toString('base64url')}}});
   }});
  vm.runInContext(readFileSync(new URL('../out/gmail-import.js',import.meta.url),'utf8'),context);
- return {node,context,calls,events,consent(){clientConfig.callback({access_token:'test-token',expires_in:3600})},get config(){return clientConfig},setEnabled(value){enabled=value},setGranted(value){scopeGranted=value},setAccount(value){currentAccount=value},slow(){slow=true},finishSlow(){resolveSlow?.()}};
+ return {node,context,calls,events,get requests(){return requests},delaySetup(){slowSetup=true},finishSetup(){slowSetup=false;resolveSetup?.()},delayGoogle(){context.window.google=undefined},finishGoogle(){context.window.google={accounts:{oauth2}};context.document.head.children.at(-1).onload()},consent(){clientConfig.callback({access_token:'test-token',expires_in:3600})},get config(){return clientConfig},setEnabled(value){enabled=value},setGranted(value){scopeGranted=value},setAccount(value){currentAccount=value},slow(){slow=true},finishSlow(){resolveSlow?.()}};
 }
 test('Gmail is opt-in, requests read-only access and copies only selected plain text without a save',async()=>{
  const app=harness();assert.equal(app.calls.length,0);
@@ -64,4 +64,29 @@ test('Gmail account changes and cancelled body requests cannot overwrite a draft
  app.node('source-text').value='';app.slow();const read=app.node('gmail-read').onclick();await new Promise(resolve=>setImmediate(resolve));app.node('gmail-cancel').onclick();app.finishSlow();await read;assert.equal(app.node('source-text').value,'');
  app.setAccount('user_bob');await app.node('gmail-search').onclick();assert.equal(app.node('gmail-results').children.length,0);assert.equal(app.context.library,null);
  app.events.pagehide();
+});
+test('cancelled or departed Gmail preparation cannot revive a stale connection',async()=>{
+ for(const action of ['cancel','pagehide','account']){
+  const app=harness();app.delaySetup();const preparing=app.node('gmail-prepare').onclick();await new Promise(resolve=>setImmediate(resolve));
+  if(action==='cancel')app.node('gmail-cancel').onclick();
+  if(action==='pagehide')app.events.pagehide();
+  if(action==='account'){app.context.library={accountKey:'user_bob'};app.setAccount('user_bob');app.context.window.GmailImport.clear()}
+  const message=app.node('gmail-status').textContent;app.finishSetup();await preparing;
+  assert.equal(app.node('gmail-connect').hidden,true);assert.equal(app.node('gmail-connect').disabled,true);assert.equal(app.config,undefined);assert.equal(app.requests,0);assert.equal(app.node('gmail-status').textContent,message);
+ }
+});
+
+test('late Google library loading and old consent callbacks cannot cross an account boundary',async()=>{
+ const app=harness();app.delayGoogle();const preparing=app.node('gmail-prepare').onclick();await new Promise(resolve=>setImmediate(resolve));
+ app.context.library={accountKey:'user_bob'};app.setAccount('user_bob');app.context.window.GmailImport.clear();app.finishGoogle();await preparing;
+ assert.equal(app.node('gmail-connect').hidden,true);assert.equal(app.config,undefined);
+ await app.node('gmail-prepare').onclick();app.node('gmail-connect').onclick();const stale=app.config;
+ app.context.window.GmailImport.clear();app.context.library={accountKey:'user_charlie'};app.setAccount('user_charlie');
+ stale.callback({access_token:'test-token',expires_in:3600});assert.equal(app.node('gmail-search').disabled,true);assert(!app.calls.some(call=>call.url.startsWith('https:')));
+});
+
+test('a revoked private-test gate removes earlier preparation and requires fresh account-bound setup',async()=>{
+ const app=harness();await app.node('gmail-prepare').onclick();assert.equal(app.node('gmail-connect').hidden,false);
+ app.setEnabled(false);await app.node('gmail-prepare').onclick();app.node('gmail-connect').onclick();assert.equal(app.requests,0);assert.equal(app.node('gmail-connect').hidden,true);assert.match(app.node('gmail-status').textContent,/not enabled/);
+ app.setEnabled(true);await app.node('gmail-prepare').onclick();app.context.library={accountKey:'user_bob'};app.setAccount('user_bob');app.node('gmail-connect').onclick();assert.equal(app.requests,0);assert.equal(app.node('gmail-connect').hidden,true);assert.match(app.node('gmail-status').textContent,/account changed/);
 });
