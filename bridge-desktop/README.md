@@ -6,7 +6,7 @@ Users download the application from https://spool-studio.uk/bridge.html — they
 2. Import that file into the desktop app on a computer on the printer's network.
 3. Check the connection, then Start. Keep the computer awake and the bridge running.
 
-Closing the window keeps the bridge in the tray/menu bar. Stop prevents new requests and lets an in-flight request finish; Quit exits safely. There is no automatic start at login. Do not run multiple bridge instances using the same key.
+Closing the window keeps the bridge in the tray/menu bar. Stop prevents new requests and lets an in-flight request finish; Quit exits safely. On Windows, opt into Start with Windows and reconnect automatically. It starts in the tray after user sign-in, checks the printer and retries offline checks every 30 seconds. Stop cancels reconnecting for the current session; disable the option to remove the Windows startup entry. macOS remains manual in this beta. Do not run multiple bridge instances using the same key.
 
 Imported credentials are encrypted using the operating system's secure storage. The original downloaded JSON still contains a secret: keep it private and delete it when no longer needed. Remove configuration deletes the app's copy; revoking the key on the website disables that key.
 

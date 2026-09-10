@@ -1,5 +1,15 @@
 [
   {
+    "version": "1.9.2",
+    "date": "2026-09-10",
+    "title": "Remember your Windows bridge",
+    "changes": [
+      "Bridge desktop beta 0.2.0 adds an optional Start with Windows and reconnect automatically setting.",
+      "After Windows sign-in, the bridge opens in the tray, checks the printer and retries if the printer or network is unavailable. Existing printing and firmware safety checks remain unchanged.",
+      "Stop cancels automatic reconnect for the current session; disabling the option removes the Windows startup entry. Install the new desktop version and enable the option once."
+    ]
+  },
+  {
     "version": "1.9.1",
     "date": "2026-09-10",
     "title": "Visible printer connection feedback",

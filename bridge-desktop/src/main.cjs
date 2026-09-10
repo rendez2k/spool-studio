@@ -2,6 +2,7 @@
 const {app,BrowserWindow,ipcMain,dialog,shell,Tray,Menu,nativeImage,safeStorage,protocol,net,session}=require('electron');
 const path=require('node:path'),fs=require('node:fs/promises'),{pathToFileURL}=require('node:url');
 const {BridgeController}=require('./controller.cjs'),{vault}=require('./vault.cjs'),core=require('./bridge.cjs');
+const {windowsStartup}=require('./startup.cjs');
 const page='bridge://app/index.html';
 protocol.registerSchemesAsPrivileged([{scheme:'bridge',privileges:{standard:true,secure:true,supportFetchAPI:true}}]);
 let window,tray,controller,storage,quitting=false,importing=false;
@@ -30,9 +31,11 @@ else{
   window.on('close',event=>{if(!quitting&&tray){event.preventDefault();window.hide()}});
   tray=new Tray(icon.resize({width:20,height:20}));tray.setToolTip('Spool Studio Bridge — stopped');
   tray.on('click',()=>{window.show();window.focus()});
+  const startup=windowsStartup(app);
+  const snapshot=()=>({...controller.status(),startup:startup.status()});
   controller=new BridgeController(core,{notify:state=>{
-   if(!window.isDestroyed())window.webContents.send('bridge-status',state);
-   tray.setToolTip('Spool Studio Bridge — '+(state.running?'running':state.busy?'stopping':'stopped'));
+   if(!window.isDestroyed())window.webContents.send('bridge-status',{...state,startup:startup.status()});
+   tray.setToolTip('Spool Studio Bridge — '+(state.running?'running':state.reconnecting?'reconnecting':state.busy?'working':'stopped'));
    if(quitting&&!state.busy)app.quit();
   }});
   tray.setContextMenu(Menu.buildFromTemplate([{label:'Open Spool Studio Bridge',click:()=>window.show()},{label:'Stop bridge',click:()=>controller.stop()},{type:'separator'},{label:'Quit',click:()=>{quitting=true;controller.stop();app.quit()}}]));
@@ -45,10 +48,10 @@ else{
   ipcMain.handle('bridge-action',async(event,action)=>{
    trusted(event);
    try{
-    if(action==='status')return {ok:true,state:controller.status()};
+    if(action==='status')return {ok:true,state:snapshot()};
     if(importing)throw Error('Finish choosing your configuration first.');
     if(action==='import'){
-     if(controller.running||controller.busy)throw Error('Stop the bridge before importing a configuration.');
+     if(controller.running||controller.busy||controller.reconnecting)throw Error('Stop the bridge before importing a configuration.');
      importing=true;
      try{
       const chosen=await dialog.showOpenDialog(window,{title:'Import private printer configuration',properties:['openFile'],filters:[{name:'Spool Studio configuration',extensions:['json']}]});
@@ -61,20 +64,25 @@ else{
        await storage.save(validated);controller.configure(validated);
       }
      }finally{importing=false}
-    }else if(action==='check')await controller.check();
-    else if(action==='start')await controller.start();
+    }else if(action==='check'){if(controller.reconnecting)throw Error('Stop automatic reconnect first.');await controller.check()}
+    else if(action==='start'){if(controller.reconnecting)throw Error('Stop automatic reconnect first.');await controller.start()}
     else if(action==='stop')controller.stop();
+    else if(action==='startup-enable'){startup.set(true);await controller.connectAutomatically()}
+    else if(action==='startup-disable'){startup.set(false);controller.cancelReconnect()}
     else if(action==='forget'){
-     if(controller.running||controller.busy)throw Error('Stop the bridge first.');
+     if(controller.running||controller.busy||controller.reconnecting)throw Error('Stop the bridge first.');
      const choice=await dialog.showMessageBox(window,{type:'question',buttons:['Cancel','Remove configuration'],defaultId:0,cancelId:0,message:'Remove the saved configuration from this app?',detail:'This does not revoke the website key or delete your downloaded JSON file.'});
      if(choice.response===1){await storage.remove();controller.forget()}
     }else if(action==='website')await shell.openExternal('https://spool-studio.uk/printer.html');
     else if(action==='help')await shell.openExternal('https://spool-studio.uk/bridge.html');
     else if(action==='quit'){quitting=true;controller.stop();app.quit()}
     else throw Error('Unknown action.');
-    return {ok:true,state:controller.status()};
-   }catch{return {ok:false,error:'Could not complete that action. Check the file, stop any active bridge request, or try again.',state:controller.status()}}
+    return {ok:true,state:snapshot()};
+   }catch{return {ok:false,error:'Could not complete that action. Check the configuration or startup settings, stop any active request, and try again.',state:snapshot()}}
   });
-  await window.loadURL(page);window.show();
+  await window.loadURL(page);
+  const automatic=startup.status().enabled&&Boolean(controller.config);
+  if(!automatic||!process.argv.includes('--startup'))window.show();
+  if(automatic)void controller.connectAutomatically();
  });
 }

@@ -5,6 +5,6 @@ import {fileURLToPath} from 'node:url';
 const directory=path.dirname(fileURLToPath(import.meta.url)),root=path.dirname(directory);
 await mkdir(path.join(directory,'app'),{recursive:true});
 await build({entryPoints:[path.join(root,'scripts/printer-bridge.mjs')],outfile:path.join(directory,'app/bridge.cjs'),bundle:true,platform:'node',format:'cjs',target:'node22',define:{'import.meta.url':'""'}});
-for(const filename of ['main.cjs','preload.cjs','controller.cjs','vault.cjs','index.html','ui.css','ui.js'])await copyFile(path.join(directory,'src',filename),path.join(directory,'app',filename));
+for(const filename of ['main.cjs','preload.cjs','controller.cjs','vault.cjs','startup.cjs','index.html','ui.css','ui.js'])await copyFile(path.join(directory,'src',filename),path.join(directory,'app',filename));
 await copyFile(path.join(root,'out/icons/filament-512.png'),path.join(directory,'app/icon.png'));
 await copyFile(path.join(root,'node_modules/ipaddr.js/LICENSE'),path.join(directory,'app/IPADDR-LICENSE.txt'));

@@ -4,7 +4,7 @@ Open **Send to printer** on a library card, the physical-reel page, the phone pr
 
 ## Local setup
 
-For the desktop beta, download [Spool Studio Bridge](https://spool-studio.uk/bridge.html). Windows/Mac users do not need Git, Node.js or a repository checkout. Create/download the private printer configuration in the website, import it into the app, choose **Check connection**, then **Start bridge**. Keep the computer awake. Closing the window leaves it in the tray/menu bar; Stop/ Quit safely finish any in-flight request. Restarting the app requires a fresh check/start.
+For the desktop beta, download [Spool Studio Bridge](https://spool-studio.uk/bridge.html). Windows/Mac users do not need Git, Node.js or a repository checkout. Create/download the private printer configuration in the website, import it into the app, choose **Check connection**, then **Start bridge**. Keep the computer awake. Closing the window leaves it in the tray/menu bar; Stop/ Quit safely finish any in-flight request. Windows users can opt into **Start with Windows and reconnect automatically**. The app starts in the tray after sign-in, checks the printer and retries offline checks every 30 seconds. Stop cancels retries for this session; disabling the option removes the startup entry. This is not a pre-login Windows service. macOS remains manual.
 
 The beta is unsigned on Windows and not notarised on Mac. Do not disable operating-system security if installation is blocked. The download page also provides an advanced Docker option. This companion does not replace the separate Spoolman remaining-weight sync process.
 

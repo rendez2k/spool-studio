@@ -3,19 +3,20 @@ class BridgeController {
  constructor(core,options={}){
   this.core=core;this.delay=options.delay||5000;this.notify=options.notify||(()=>{});this.schedule=options.schedule||setTimeout;this.cancel=options.cancel||clearTimeout;
   this.config=null;this.running=false;this.busy=false;this.checked=false;this.timer=null;this.lastContact=null;this.checkState='idle';this.checkMessage='';this.message='Import your private printer configuration to begin.';
+  this.reconnecting=false;this.reconnectTimer=null;this.reconnectEpoch=0;
  }
  status(){
-  return {configured:Boolean(this.config),origin:this.config?.origin||'',printerUrl:this.config?.printerUrl||'',spoolmanUrl:this.config?.spoolmanUrl||'',running:this.running,busy:this.busy,checked:this.checked,lastContact:this.lastContact,checkState:this.checkState,checkMessage:this.checkMessage,message:this.message};
+  return {configured:Boolean(this.config),origin:this.config?.origin||'',printerUrl:this.config?.printerUrl||'',spoolmanUrl:this.config?.spoolmanUrl||'',running:this.running,busy:this.busy,reconnecting:this.reconnecting,checked:this.checked,lastContact:this.lastContact,checkState:this.checkState,checkMessage:this.checkMessage,message:this.message};
  }
  emit(){this.notify(this.status());return this.status()}
  configure(value){
-  if(this.running||this.busy)throw Error('Stop the bridge before changing its configuration.');
+  if(this.running||this.busy||this.reconnecting)throw Error('Stop the bridge before changing its configuration.');
   const config=this.core.configuration(value);
   if(config.origin!=='https://spool-studio.uk')throw Error('This desktop build connects only to https://spool-studio.uk.');
   this.config=config;this.checked=false;this.lastContact=null;this.checkState='idle';this.checkMessage='';this.message='Configuration loaded. Check the connection before starting.';return this.emit();
  }
  forget(){
-  if(this.running||this.busy)throw Error('Stop the bridge before removing its configuration.');
+  if(this.running||this.busy||this.reconnecting)throw Error('Stop the bridge before removing its configuration.');
   this.config=null;this.checked=false;this.lastContact=null;this.checkState='idle';this.checkMessage='';this.message='Configuration removed from this app. Revoke the key on the website to disable other copies.';return this.emit();
  }
  async check(){
@@ -35,8 +36,34 @@ class BridgeController {
   this.running=true;this.message='Starting the bridge…';this.emit();await this.cycle();return this.status();
  }
  stop(){
+  this.cancelAutomatic();
   this.running=false;if(this.timer!==null){this.cancel(this.timer);this.timer=null}
   this.message=this.busy?'Stopping after the current request finishes. Already-sent commands cannot be recalled.':'Stopped. No new requests will be taken.';return this.emit();
+ }
+ cancelAutomatic(){
+  const pending=this.reconnecting;
+  this.reconnecting=false;this.reconnectEpoch++;
+  if(this.reconnectTimer!==null){this.cancel(this.reconnectTimer);this.reconnectTimer=null}
+  return pending;
+ }
+ cancelReconnect(){
+  if(this.cancelAutomatic())this.message='Automatic reconnect cancelled. Start manually when ready.';
+  return this.emit();
+ }
+ async connectAutomatically(){
+  if(!this.config||this.running||this.busy||this.reconnecting)return this.status();
+  this.reconnecting=true;const epoch=++this.reconnectEpoch;this.emit();
+  return this.attemptReconnect(epoch);
+ }
+ async attemptReconnect(epoch){
+  if(!this.reconnecting||epoch!==this.reconnectEpoch)return this.status();
+  await this.check();
+  if(!this.reconnecting||epoch!==this.reconnectEpoch)return this.status();
+  if(this.checked){this.reconnecting=false;return this.start()}
+  if(this.checkState==='unsupported'){this.reconnecting=false;return this.emit()}
+  this.message='Waiting for the printer or network. Retrying automatically in 30 seconds; Stop cancels reconnecting.';
+  this.reconnectTimer=this.schedule(()=>{this.reconnectTimer=null;void this.attemptReconnect(epoch)},30000);
+  return this.emit();
  }
  async cycle(){
   if(!this.running||this.busy)return;

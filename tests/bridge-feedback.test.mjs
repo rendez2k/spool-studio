@@ -21,6 +21,9 @@ test('desktop renderer places feedback beside Check and distinguishes checked fr
  assert.equal(node('check-result').dataset.state,'ready');assert.equal(node('badge').textContent,'Ready · not running');assert.equal(node('start').disabled,false);
  render({...initial,checkState:'error',checkMessage:'Connection failed'});
  assert.equal(node('check-result').dataset.state,'error');assert.equal(node('start').disabled,true);assert.equal(node('check').disabled,false);
+ render({...initial,reconnecting:true,startup:{supported:true,enabled:true,message:'Starts after sign-in'}});
+ assert.equal(node('startup-option').hidden,false);assert.equal(node('startup').checked,true);
+ assert.equal(node('badge').textContent,'Reconnecting…');assert.equal(node('stop').disabled,false);assert.equal(node('check').disabled,true);
  const html=await readFile('bridge-desktop/src/index.html','utf8');
  assert.match(html,/<button id="check"[^>]*>[^<]*<\/button><p id="check-result"[^>]*role="status"/);
  assert.equal((html.match(/id="error"/g)||[]).length,1);
