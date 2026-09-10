@@ -10,9 +10,18 @@ const snapshot={accountKey:'test-owner',uncounted:1,slots:[{position:1,shelf:1,s
 test('label presets use exact mm sizes and custom dimensions reject CSS injection and invalid bounds',()=>{
  assert.deepEqual(labels.dimensions('60x30'),[60,30]);
  assert.deepEqual(labels.dimensions('76x50'),[76,50]);
+ assert.deepEqual(labels.dimensions('105x145'),[105,145]);
  assert.deepEqual(labels.dimensions('4x6'),[101.6,152.4]);
  assert.deepEqual(labels.dimensions('custom','60.5','30'),[60.5,30]);
  for(const pair of [['NaN',30],['60; color:red',30],[39,30],[211,30],[60,24],[60,298],[Infinity,30],['',30]])assert.throws(()=>labels.dimensions('custom',...pair));
+});
+
+test('label text grows to fit with bounded work, a readable minimum and no overshoot',()=>{
+ for(const capacity of [8,9.5,12.3,20,36,48,90]){
+  let calls=0;const size=labels.fitFont(value=>{calls++;return value<=capacity});
+  assert(size>=8&&size<=48&&size<=capacity);assert(size>=Math.min(capacity,48)-.5);assert(calls<=9);
+ }
+ assert.equal(labels.fitFont(()=>false),8);
 });
 
 test('paired labels preserve the shelf order, exact finish and identical box/spool numbering without inventing bundle rolls',()=>{

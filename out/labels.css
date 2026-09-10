@@ -12,17 +12,19 @@
 .label-preview { overflow: auto; max-height: 340px; padding: 12px; background: var(--rail); border: 1px solid var(--line); border-radius: 8px; margin-bottom: 12px; }
 .label-preview-column .actions { justify-content: space-between; font-variant-numeric: tabular-nums; }
 #label-panel :focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
-.spool-print-label { box-sizing: border-box; width: var(--label-width); height: var(--label-height); padding: 2mm; display: flex; flex-direction: column; justify-content: safe center; flex: none; gap: .4mm; background: white; color: black; font: 8pt/1.15 Arial, sans-serif; overflow-wrap: anywhere; break-inside: avoid; }
+.spool-print-label { box-sizing: border-box; width: var(--label-width); height: var(--label-height); padding: 2mm; display: flex; flex-direction: column; justify-content: safe center; flex: none; gap: .08em; background: white; color: black; font: var(--label-font,8pt)/1.15 Arial, sans-serif; overflow-wrap: anywhere; break-inside: avoid; }
 .spool-print-label > * { flex: none; }
-.spool-print-label .label-position { font-size: 10pt; font-weight: 700; font-variant-numeric: tabular-nums; }
-.spool-print-label .label-colour { font-size: 11pt; line-height: 1.1; }
+.spool-print-label .label-position { font-size: 1.15em; font-weight: 700; font-variant-numeric: tabular-nums; }
+.spool-print-label .label-colour { font-size: 1.45em; line-height: 1.1; }
 .spool-print-label .label-stock:empty { display: none; }
 .label-qr-toggle { display: flex; align-items: center; gap: 8px; font-size: .8125rem; min-height: 44px; cursor: pointer; }
 .label-qr-toggle input[type=checkbox] { flex: 0 0 18px; width: 18px; height: 18px; min-height: 0; padding: 0; margin: 0; accent-color: var(--accent); }
 .spool-print-label.has-reel-qr { position: relative; padding-right: 23mm; }
 .spool-print-label .label-code { position: absolute; right: 1mm; top: calc(50% - 10mm); width: 20mm; height: 20mm; }
 .label-code svg { display: block; width: 100%; height: 100%; }
-.spool-print-label .label-shelf { font-size: 7pt; }
+.spool-print-label .label-shelf { font-size: .875em; }
+.label-print-settings { margin:16px 0; padding:12px; border:1px solid var(--line); border-radius:8px; font-size:.875rem; }
+.label-print-settings strong,.label-print-settings span { display:block; }
 #spool-label-print { display: none; }
 #spool-label-print.label-measuring { display: block; position: fixed; left: -10000px; top: 0; visibility: hidden; }
 @media (max-width: 800px) { .label-workspace { grid-template-columns: minmax(0, 1fr); gap: 24px; } .label-preview-column { grid-row: 1; } }

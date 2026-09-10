@@ -1,5 +1,13 @@
 [
   {
+    "version": "1.7.2",
+    "date": "2026-09-10",
+    "title": "Bigger, more readable labels",
+    "changes": [
+      "Label text now grows to fit the selected label, with the same sizing in preview and print. Larger paper no longer uses tiny fixed-size text. Added a 105 × 145 mm preset and clearer matching printer-paper, margin and header settings."
+    ]
+  },
+  {
     "version": "1.7.1",
     "date": "2026-09-10",
     "title": "Printer support for older imports",

@@ -7,11 +7,12 @@
  panel.innerHTML=`<div class="label-heading"><h3 id="label-heading" tabindex="-1">Labels for your shelf</h3><button id="close-labels" type="button">Close labels</button></div>
  <p class="label-hint">Print matching labels for each spool and its box. SP numbers stay with the reel; shelf positions can change. <a href="/reels.html">Assign permanent IDs or manage individual spools</a> before printing QR labels.</p>
  <div class="label-workspace"><form id="label-settings"><div class="label-fields">
- <label>Label size<select id="label-size"><option value="60x30">60 × 30 mm · spool &amp; box</option><option value="50x30">50 × 30 mm</option><option value="40x30">40 × 30 mm</option><option value="76x50">76 × 50 mm · MUNBYN</option><option value="100x50">100 × 50 mm</option><option value="4x6">4 × 6 in · shipping</option><option value="custom">Custom size</option></select></label>
+ <label>Label size<select id="label-size"><option value="60x30">60 × 30 mm · spool &amp; box</option><option value="50x30">50 × 30 mm</option><option value="40x30">40 × 30 mm</option><option value="76x50">76 × 50 mm · MUNBYN</option><option value="100x50">100 × 50 mm</option><option value="105x145">105 × 145 mm</option><option value="4x6">4 × 6 in · shipping</option><option value="custom">Custom size</option></select></label>
  <label>Copies per roll<select id="label-copies"><option value="2">Two · spool + box</option><option value="1">One · spool or box</option></select></label>
  </div><div id="label-custom" class="label-fields" hidden><label>Width (mm)<input id="label-width" type="number" min="40" max="210" step="0.1" value="60"></label><label>Height (mm)<input id="label-height" type="number" min="25" max="297" step="0.1" value="30"></label></div>
  <div class="label-fields"><label>First shelf position<input id="label-first" type="number" min="1" step="1" value="1"></label><label>Last shelf position<input id="label-last" type="number" min="1" step="1" value="1"></label></div>
  <label class="label-qr-toggle"><input id="label-qr" type="checkbox" checked> Include private spool QR link (60 × 30 mm or larger)</label>
+ <p class="label-print-settings"><strong id="label-paper-size"></strong><span>Margins: None · Scale: 100% · Headers and footers: Off</span><span>Match the loaded labels. A larger driver paper size leaves empty space; the app cannot change these printer settings.</span></p>
  <p id="label-status" class="label-hint" role="status"></p><div class="actions"><button id="label-print" class="primary" type="submit">Print labels</button><button id="label-refresh" type="button">Use current shelf</button></div>
  <p class="label-hint">Choose the same paper size in your printer settings, 100% / actual size, no margins, and headers and footers off. Test one position first. MUNBYN uses your usual printer driver or print service—not a direct Bluetooth connection from this page. <a href="/guide.html#labels">Printing help</a></p>
  </form><div class="label-preview-column"><h4>Label preview</h4><div id="label-preview" class="label-preview"></div><div class="actions"><button id="label-prev" type="button" aria-label="Previous label preview">Previous</button><span id="label-page"></span><button id="label-next" type="button" aria-label="Next label preview">Next</button></div><p class="label-hint">Black text for thermal printing. Screen size may differ from the actual label.</p></div></div>`;
@@ -41,16 +42,20 @@
   for(const element of [printRoot,node('label-preview')]){element.style.setProperty('--label-width',width+'mm');element.style.setProperty('--label-height',height+'mm')}
  }
  function overflow(element){return element.scrollHeight>element.clientHeight+1||element.scrollWidth>element.clientWidth+1}
+ function fitLabel(element){
+  const size=SpoolLabels.fitFont(value=>{element.style.setProperty('--label-font',value+'pt');return !overflow(element)});
+  element.style.setProperty('--label-font',size+'pt');
+ }
  function render(){
   node('label-custom').hidden=node('label-size').value!=='custom';
   node('label-width').disabled=node('label-height').disabled=node('label-custom').hidden;node('label-print').disabled=true;
   planned=[];node('label-preview').replaceChildren();node('label-page').textContent='';node('label-prev').disabled=node('label-next').disabled=true;
   try{
    if(stale())throw Error('The library, selection or shelf changed. Refresh the label selection before printing.');
-   const options=settings();planned=SpoolLabels.plan(snapshot,options);
+   const options=settings();planned=SpoolLabels.plan(snapshot,options);node('label-paper-size').textContent='Printer paper: '+options.width+' × '+options.height+' mm';
    if(node('label-qr').checked&&planned.some(row=>row.reelId)&&(options.width<60||options.height<30))throw Error('QR labels need at least 60 × 30 mm. Choose a larger size or untick QR links.');
    sizeElements(options.width,options.height);
-   previewIndex=Math.min(previewIndex,planned.length-1);node('label-preview').append(label(planned[previewIndex]));
+   previewIndex=Math.min(previewIndex,planned.length-1);const preview=label(planned[previewIndex]);node('label-preview').append(preview);fitLabel(preview);
    node('label-page').textContent=(previewIndex+1)+' / '+planned.length;node('label-prev').disabled=previewIndex===0;node('label-next').disabled=previewIndex===planned.length-1;
    node('label-status').textContent=planned.length+' labels · '+(options.end-options.start+1)+' rolls · '+options.width+' × '+options.height+' mm.'+(planned.some(row=>!row.reelId)?' Shelf positions only for rolls without permanent IDs.':' QR links require the owner to sign in.')+(snapshot.uncounted?' '+snapshot.uncounted+' uncounted bundle'+(snapshot.uncounted===1?'':'s')+' excluded.':'');
    node('label-print').disabled=false;
@@ -78,6 +83,7 @@
   event.preventDefault();render();if(node('label-print').disabled)return;
   try{
    const {width,height}=settings();printRoot.replaceChildren(...planned.map(label));printRoot.hidden=false;printRoot.classList.add('label-measuring');
+   for(const element of printRoot.children)fitLabel(element);
    const tooLarge=[...printRoot.children].find(overflow);
    if(tooLarge)throw Error('Text on '+tooLarge.firstChild.textContent+' will not fit. Choose a larger label before printing.');
    printRoot.classList.remove('label-measuring');pageStyle.textContent='@media print { @page { size: '+width+'mm '+height+'mm; margin: 0; } }';document.body.classList.add('printing-spool-labels');
