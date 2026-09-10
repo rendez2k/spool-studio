@@ -1,5 +1,6 @@
 import { boundedJson } from "./api.mjs";
 import SpoolCatalog from "../out/spool-catalog.js";
+import {addReels, initialiseReels, updateReel, updateItemStatus, tokenHash} from './reels.mjs';
 
 const materials = ["PLA", "PLA+", "PETG", "ABS", "ASA", "TPU", "PA", "PC", "PVA", "HIPS", "Other"];
 const finishes = ["standard", "matte", "silk", "marble", "sparkle", "wood", "glow", "satin", "metal", "unknown"];
@@ -44,7 +45,7 @@ export async function getLibrary(database, userId) {
 
 export function libraryView(row, userId) {
   const data = JSON.parse(row.payload);
-  return { status: "complete", items: data.items, revision: row.revision, accountKey: userId, coverage: "Your private, account-synced filament inventory.", notice: "", updatedAt: row.updated_at };
+  return { status: "complete", items: data.items, reels: data.reels ?? null, bridge: { enabled: Boolean(data.bridgeHash), lastSync: data.bridgeLastSync || null }, revision: row.revision, accountKey: userId, coverage: "Your private, account-synced filament inventory.", notice: "", updatedAt: row.updated_at };
 }
 
 export async function handleLibrary(request, env) {
@@ -61,12 +62,24 @@ export async function handleLibrary(request, env) {
       if (!Number.isSafeInteger(input.baseRevision) || input.baseRevision < 1 || typeof input.requestId !== "string" || !/^[a-zA-Z0-9-]{16,64}$/.test(input.requestId)) throw Error("Invalid library request.");
     } catch (error) { return json({ error: error.message }, 400); }
     if (input.kind === "import" && input.expectedAccountKey !== userId) return json({ error: "The signed-in account changed. Reopen the importer before saving." }, 409);
+    if (['reel','initialise-reels','bridge-create','bridge-revoke'].includes(input.kind) && input.expectedAccountKey !== userId) return json({error:'The signed-in account changed. Refresh before saving.'},409);
     const row = await getLibrary(env.DB, userId);
     if (row.request_id === input.requestId) return json(libraryView(row, userId));
     if (row.revision !== input.baseRevision) return json({ error: "Your library changed elsewhere. Refresh the library, then try again; your form has been kept." }, 409);
     const data = JSON.parse(row.payload);
+    let bridgeToken;
     try {
-      if (input.kind === "import") {
+      if (input.kind === 'initialise-reels') {
+        initialiseReels(data);
+      } else if (input.kind === 'reel') {
+        updateReel(data, input.reel);
+      } else if (input.kind === 'bridge-create') {
+        if (!Array.isArray(data.reels)) throw Error('Assign permanent spool IDs first.');
+        bridgeToken = btoa(userId) + '.' + crypto.randomUUID() + crypto.randomUUID();
+        data.bridgeHash = await tokenHash(bridgeToken); data.bridgeLastSequence = 0; data.bridgeLastSync = null;
+      } else if (input.kind === 'bridge-revoke') {
+        delete data.bridgeHash; delete data.bridgeLastSequence;
+      } else if (input.kind === "import") {
         if (input.reviewed !== true || !Array.isArray(input.spools) || input.spools.length < 1 || input.spools.length > 500 || !/^[a-f0-9]{64}$/.test(input.sourceHash || "")) throw Error("Review 1–500 filament entries before importing.");
         if ((data.importHashes || []).includes(input.sourceHash)) return json({ error: "This source was already imported. Check your library before adding it again." }, 409);
         if (data.items.length + input.spools.length > 1000) throw Error("This import would exceed the 1000-entry library limit.");
@@ -75,16 +88,24 @@ export async function handleLibrary(request, env) {
           catch (error) { error.entryIndex = index; throw error; }
         });
         data.items.push(...imported.map((fields, index) => ({ ...fields, id: "spool-" + input.requestId + "-" + index, quantity: fields.spools, form: fields.packaging, sourceProduct: "", retailer: "Reviewed import", order: "", messageId: "", lineTotal: null, currency: "", used: false })));
+        for (const item of data.items.slice(-imported.length)) addReels(data, item);
         data.importHashes = [...(data.importHashes || []), input.sourceHash];
       } else if (input.kind === "add" || input.kind === "edit") {
         const fields = validateSpool(input.spool);
         if (input.kind === "add") {
           if (data.items.length >= 1000) throw Error("This library has reached its 1000-entry limit.");
           data.items.push({ ...fields, id: "spool-" + input.requestId, quantity: fields.spools, form: fields.packaging, sourceProduct: "", retailer: "Added manually", order: "", messageId: "", lineTotal: null, currency: "", used: false });
+          addReels(data, data.items.at(-1));
         } else {
           const item = data.items.find(item => item.id === input.id);
           if (!item) return json({ error: "Spool not found in your library." }, 404);
+          if (Array.isArray(data.reels)) {
+            const existing = data.reels.filter(reel => reel.itemId === item.id).length;
+            if (existing && (fields.spools === null || fields.spools < existing)) throw Error('This entry has permanent spool IDs. Mark individual reels used instead of reducing its original roll count.');
+            if (fields.spools !== null && fields.spools > existing) addReels(data, {...item, used: false}, fields.spools - existing);
+          }
           Object.assign(item, fields);
+          if (data.reels) updateItemStatus(data, item.id);
         }
       } else if (input.kind === "usage") {
         if (!Array.isArray(input.changes) || input.changes.length < 1 || input.changes.length > 1000 || input.changes.some(change => !change || typeof change.id !== "string" || typeof change.used !== "boolean")) throw Error("Invalid used marks.");
@@ -92,14 +113,21 @@ export async function handleLibrary(request, env) {
           const item = data.items.find(item => item.id === change.id);
           if (!item) return json({ error: "Spool not found in your library." }, 404);
           item.used = change.used;
+          if (data.reels) {
+            const owned = data.reels.filter(reel => reel.itemId === item.id);
+            if (change.reelStates !== undefined && (!Array.isArray(change.reelStates) || change.reelStates.length !== owned.length || new Set(change.reelStates.map(state => state.id)).size !== owned.length || change.reelStates.some(state => typeof state.used !== 'boolean' || !owned.some(reel => reel.id === state.id)))) throw Error('Invalid individual spool states.');
+            for (const reel of owned) reel.used = change.reelStates ? change.reelStates.find(state => state.id === reel.id).used : change.used;
+            updateItemStatus(data, item.id);
+          }
         }
       } else throw Error("Unknown library action.");
     } catch (error) { return json({ error: error.message, ...(Number.isInteger(error.entryIndex) ? { entryIndex: error.entryIndex } : {}) }, 400); }
     const updatedAt = new Date().toISOString();
     const payload = JSON.stringify(data);
+    if (new TextEncoder().encode(payload).length > 8000000) return json({error:'This library exceeds the 8 MB storage limit.'},400);
     const result = await env.DB.prepare("UPDATE libraries SET revision = revision + 1, payload = ?, request_id = ?, updated_at = ? WHERE user_id = ? AND revision = ?").bind(payload, input.requestId, updatedAt, userId, input.baseRevision).run();
     if (result.meta.changes !== 1) return json({ error: "Your library changed elsewhere. Refresh and try again." }, 409);
-    return json(libraryView({ revision: row.revision + 1, payload, updated_at: updatedAt }, userId));
+    return json({ ...libraryView({ revision: row.revision + 1, payload, updated_at: updatedAt }, userId), ...(bridgeToken ? {bridgeToken} : {}) });
   } catch {
     console.error("Library storage unavailable");
     return json({ error: "Your library is temporarily unavailable. Your changes have not been confirmed." }, 503);

@@ -49,6 +49,7 @@ function clearDraft(){
  get('review-status').textContent='Your detected entries will appear here. Nothing is saved automatically.';message('');controls();
 }
 function loseAccount(text){
+ window.GmailImport?.clear();
  accountCheck++;
  clearDraft();library=null;get('import-workspace').hidden=true;get('account-status').textContent=text;
  const link=document.createElement('a');link.href='/signin-with-chatgpt?return_to=%2Fimport.html';link.target='_top';link.textContent=' Sign in again';get('account-status').append(link);
@@ -63,6 +64,7 @@ async function refreshAccount(){
   if(library&&library.accountKey!==current.accountKey){loseAccount('The account changed. Your unsaved import was cleared.');return}
   const modified=library&&library.revision!==current.revision;
   library=current;get('import-workspace').hidden=false;get('account-status').textContent='Importing into your private library.';
+  window.GmailImport?.controls?.();
   if(modified&&rows.length){markDuplicates();renderRows();get('approve-import').checked=false;message('Your library changed elsewhere. Check the duplicate warnings and approve again.')}
  }catch(error){if(error.status===401)loseAccount('Sign in to import into your library.');else message(error.message)}
  controls();

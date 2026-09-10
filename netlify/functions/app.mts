@@ -15,6 +15,7 @@ export default async (request: Request) => {
     const clerk = createClerkClient({ publishableKey, secretKey });
     return await serveNetlify(request, {
       publishableKey, origins,
+      gmail: {clientId: Netlify.env.get("GOOGLE_GMAIL_CLIENT_ID"), testUsers: Netlify.env.get("GMAIL_TEST_USERS"), publicEnabled: Netlify.env.get("GMAIL_PUBLIC_ENABLED") === "true"},
       authenticate: (incoming, options) => clerk.authenticateRequest(incoming, options),
       database: () => postgresDatabase(getDatabase().pool),
       readPage: filename => readFile(path.join(process.cwd(), "dist/netlify-pages", filename), "utf8"),
@@ -24,4 +25,4 @@ export default async (request: Request) => {
   }
 };
 
-export const config: Config = { path: ["/", "/index.html", "/nfc.html", "/import.html", "/app.html", "/api/*", "/sign-in", "/sign-out"] };
+export const config: Config = { path: ["/", "/index.html", "/nfc.html", "/import.html", "/app.html", "/reels.html", "/api/*", "/sign-in", "/sign-out"] };

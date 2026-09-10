@@ -12,7 +12,7 @@
   if(!Number.isInteger(start)||!Number.isInteger(end)||start<1||end<start||end>snapshot.slots.length)throw Error('Choose a valid first and last position from this shelf view.');
   if(![1,2].includes(copies))throw Error('Choose one label or two matching labels per roll.');
   if((end-start+1)*copies>500)throw Error('Print up to 500 labels at a time. Choose a smaller range.');
-  return snapshot.slots.slice(start-1,end).flatMap(row=>Array.from({length:copies},()=>({position:row.position,shelf:row.shelf,shelfSlot:row.shelfSlot,colour:String(row.colour||'Unknown colour'),brand:String(row.brand||'Unknown brand'),product:String(row.product||''),material:String(row.material||'Unknown material'),finish:String(row.finish||'unknown'),weightGrams:row.weightGrams,packaging:row.packaging})));
+  return snapshot.slots.slice(start-1,end).flatMap(row=>Array.from({length:copies},()=>({position:row.position,shelf:row.shelf,shelfSlot:row.shelfSlot,reelId:row.reelId,reelNumber:row.reelNumber,colour:String(row.colour||'Unknown colour'),brand:String(row.brand||'Unknown brand'),product:String(row.product||''),material:String(row.material||'Unknown material'),finish:String(row.finish||'unknown'),weightGrams:row.weightGrams,packaging:row.packaging})));
  }
  function signature(snapshot){return JSON.stringify(snapshot)}
  const api={presets,dimensions,plan,signature};

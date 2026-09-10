@@ -3,13 +3,13 @@
  const node=id=>document.getElementById(id),assist=node('spool-assist');
  assist.innerHTML=`<div class="assist-methods" aria-label="Entry method"><button type="button" data-entry-method="manual" aria-pressed="true">Manual</button><button type="button" data-entry-method="link" aria-pressed="false">Product link</button><button type="button" data-entry-method="barcode" aria-pressed="false">Barcode</button></div>
  <div id="assist-link" hidden><div class="assist-input-row"><label>Product-page link<input id="assist-url" type="text" inputmode="url" maxlength="2000" placeholder="https://…" autocomplete="off"></label><button id="assist-lookup" type="button">Read product</button></div><p class="meta">Bambu Lab, SUNLU, ELEGOO or full Amazon UK product links. Sends the link to our server to read the public page; shops may block lookup. <a href="/import.html">Paste product text instead</a>.</p></div>
- <div id="assist-barcode" hidden><div class="assist-input-row"><label>Barcode / manufacturer SKU<input id="assist-code" type="text" maxlength="64" placeholder="Scan or type the printed code" autocomplete="off" autocapitalize="characters"></label><button id="assist-find-code" type="button">Find in library</button><button id="assist-scan" type="button">Scan camera</button></div><p class="meta">Looks in your own saved library—not a universal product catalogue. For a new code, enter the details below and save; next time it can fill a draft. Codes may identify a pack, not a single roll.</p><video id="assist-camera" playsinline muted hidden aria-label="Barcode camera preview"></video></div>
+ <div id="assist-barcode" hidden><div class="assist-input-row"><label>Barcode / manufacturer SKU<input id="assist-code" type="text" maxlength="64" placeholder="Scan or type the printed code" autocomplete="off" autocapitalize="characters"></label><button id="assist-find-code" type="button">Find in library</button><button id="assist-scan" type="button">Scan camera</button></div><p class="meta">Looks in your own saved library—not a universal product catalogue. For a new code, enter the details below and save; next time it can fill a draft. Codes may identify a pack, not a single roll.</p><p class="meta">For an unknown EAN / UPC, you can send just its code to UPCitemdb. Limited free catalogue coverage; verify the result against your reel. <a href="https://devs.upcitemdb.com/privacypolicy" target="_blank" rel="noopener noreferrer">Provider privacy</a></p><button id="assist-catalogue" type="button">Search UPCitemdb with this code</button><video id="assist-camera" playsinline muted hidden aria-label="Barcode camera preview"></video></div>
  <button id="assist-cancel" type="button" hidden>Cancel</button><p id="assist-status" class="meta" role="status" aria-live="polite"></p><div id="assist-results" class="assist-result"></div><p id="assist-source" class="assist-source" hidden></p>`;
  let sequence=0,loading=false,scanning=false,requestController=null,cameraStream=null,scanControls=null,scanTimer=null,decoderPromise=null,method='manual',source='';
  const stopTracks=stream=>stream?.getTracks().forEach(track=>track.stop());
  function controls(){
   const blocked=libraryBusy||loading||scanning;
-  assist.querySelectorAll('input,[data-entry-method],#assist-lookup,#assist-find-code,#assist-scan').forEach(element=>element.disabled=blocked);
+  assist.querySelectorAll('input,[data-entry-method],#assist-lookup,#assist-find-code,#assist-scan,#assist-catalogue').forEach(element=>element.disabled=blocked);
   node('assist-cancel').hidden=!(loading||scanning);node('save-spool').disabled=libraryBusy||loading||scanning;
   node('spool-form').querySelectorAll('.spool-fields input,.spool-fields select,#spool-notes').forEach(element=>element.disabled=blocked||element.hidden);
   node('assist-results').querySelectorAll('button').forEach(button=>button.disabled=blocked);
@@ -89,6 +89,20 @@
   }catch(error){message(error.message)}
  }
  node('assist-find-code').onclick=findCode;
+ node('assist-catalogue').onclick=async()=>{
+  if(libraryBusy||loading||scanning||!dataset.accountKey)return;
+  stop();const current=sequence,account=dataset.accountKey,code=node('assist-code').value.trim();loading=true;requestController=new AbortController();controls();message('Looking up this barcode in UPCitemdb…');node('assist-results').replaceChildren();
+  const timeout=setTimeout(()=>requestController?.abort(),15000);
+  try{
+   const response=await fetch('/api/barcode-lookup',{method:'POST',credentials:'same-origin',redirect:'error',cache:'no-store',signal:requestController.signal,headers:{'Content-Type':'application/json'},body:JSON.stringify({code,consent:true})});
+   const value=await response.json();if(current!==sequence||account!==dataset.accountKey||!node('spool-dialog').open)return;
+   if(response.status===401){lostLibrarySession();return}if(!response.ok)throw Error(value.error||'Catalogue unavailable.');
+   if(value.accountKey!==account){lostLibrarySession();return}
+   message(value.products.length?'UPCitemdb results are unverified drafts. Confirm the actual material, finish, colour, weight and pack contents.':'No exact barcode result. Enter the details manually; absence does not mean the product is invalid.');
+   for(const product of value.products){const parsed=FilamentImport.parse(product.brand+' '+product.title)[0]?.spool;addDraftButton('Review '+product.title,{brand:product.brand||parsed?.brand||'',product:parsed?.product||product.title.slice(0,100),material:parsed?.material||'Other',finish:parsed?.finish||'unknown',colour:product.colour||'',hex:'',packaging:'unknown',weightGrams:parsed?.weightGrams??null,barcode:code},account)}
+  }catch(error){if(current===sequence)message(error.name==='AbortError'?'Catalogue request timed out or was cancelled.':error.message)}
+  finally{clearTimeout(timeout);if(current===sequence){loading=false;requestController=null;controls()}}
+ };
  function loadDecoder(){
   if(window.SpoolBarcodeDecoder)return Promise.resolve(window.SpoolBarcodeDecoder);
   if(!decoderPromise)decoderPromise=new Promise((resolve,reject)=>{

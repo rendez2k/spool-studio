@@ -27,7 +27,7 @@
 <div class="sidebar-bottom"><button id="theme" aria-label="Switch colour theme">Dark mode</button><p>Your private inventory.<br>Synced to your account.</p></div>
 </aside>
 <main class="workspace" id="main" tabindex="-1">
-<header class="topbar"><div><h1>Spool Studio</h1><p>Your materials, in their place.</p></div><div class="actions library-actions" aria-label="Library actions"><button id="add-spool" class="primary" disabled>Add spools</button><a class="import-action" href="/import.html">Import</a><details id="library-more" class="library-more"><summary>More<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary><div class="library-more-panel"><button id="export" type="button">Export CSV</button><p class="export-hint">Exports the current view.</p><a href="/app.html">App &amp; device</a><a href="/guide.html">Help &amp; import tips</a><div class="library-account"><p id="account-label">Your own private library</p><a id="account-link" href="/signin-with-chatgpt?return_to=%2F" target="_top">Sign in with ChatGPT</a></div></div></details></div></header>
+<header class="topbar"><div><h1>Spool Studio</h1><p>Your materials, in their place.</p></div><div class="actions library-actions" aria-label="Library actions"><button id="add-spool" class="primary" disabled>Add spools</button><a class="import-action" href="/import.html">Import</a><details id="library-more" class="library-more"><summary>More<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary><div class="library-more-panel"><button id="export" type="button">Export CSV</button><p class="export-hint">Exports the current view.</p><a href="/reels.html">Physical spools &amp; usage</a><a href="/app.html">App &amp; device</a><a href="/guide.html">Help &amp; import tips</a><div class="library-account"><p id="account-label">Your own private library</p><a id="account-link" href="/signin-with-chatgpt?return_to=%2F" target="_top">Sign in with ChatGPT</a></div></div></details></div></header>
 <p id="library-status" class="meta" role="status"></p><button id="refresh-library" type="button" hidden>Refresh library</button>
 <section id="inventory-summary" class="stats" aria-label="Inventory summary">
 <div class="stat"><strong id="spools">—</strong><span id="roll-label">Rolls available</span><span id="spoolnote">Confirmed quantities</span></div>
@@ -100,7 +100,7 @@
 <script id="dataset" type="application/json">{"status":"signedout","items":[]}</script>
 <link rel="stylesheet" href="/labels.css"><script src="/labels-core.js"></script><script src="/labels.js" defer></script>
 <link rel="stylesheet" href="/spool-assist.css"><script src="/spool-catalog.js"></script><script src="/import-parser.js"></script><script src="/spool-assist.js" defer></script>
-<script src="matcher.js"></script>
+<script src="/reels-core.js"></script><script src="matcher.js"></script>
 <script src="remapper.js"></script>
 <script src="shopping.js"></script>
 <script src="nfc-codec.js"></script>
@@ -169,9 +169,10 @@ function combineFamilies(rows){
  }).sort((left,right)=>Number(isUsed(left))-Number(isUsed(right))||Number(!!right.family)-Number(!!left.family)||(right.spools??-1)-(left.spools??-1)||left.colour.localeCompare(right.colour));
 }
 
+function stockRows(){return typeof SpoolReels==='undefined'?items:SpoolReels.rows(items,dataset.reels)}
 async function markUsage(id){
  const entry=(familyMode&&mode!=='shelf'?displayed.flatMap(row=>row.variants):displayed).find(row=>row.id===id);if(!entry)return;
- const members=entry.members||[entry],nextUsed=!isUsed(entry),previous=members.map(row=>({id:row.id,used:isUsed(row)}));
+ const members=entry.members||[entry],nextUsed=!isUsed(entry),previous=members.map(row=>({id:row.id,used:isUsed(row),...(Array.isArray(dataset.reels)?{reelStates:dataset.reels.filter(reel=>reel.itemId===row.id).map(reel=>({id:reel.id,used:reel.used}))}:{})}));
  if(!await saveLibraryAction({kind:'usage',changes:members.map(row=>({id:row.id,used:nextUsed}))}))return;
  lastUsageChange=previous;$('usage-text').textContent=entry.colour+(nextUsed?' marked as used.':' restored to available.');$('usage-message').classList.remove('hidden');
 }
@@ -227,7 +228,7 @@ function arrangeShelf(rows){
   }
   return colourOrder||left.colour.localeCompare(right.colour)||left.brand.localeCompare(right.brand)||left.product.localeCompare(right.product)||left.id.localeCompare(right.id);
  });
- const slots=ordered.flatMap(row=>Array.from({length:row.spools},(_,rollIndex)=>({...row,spools:1,slotId:row.id+':'+rollIndex,sourceSpools:row.spools,rollInPurchase:rollIndex+1,separate:shelfColourKey(row).separate})));
+ const slots=ordered.flatMap(row=>{const reels=row.reels?.filter(reel=>!reel.used);return Array.from({length:row.spools},(_,rollIndex)=>({...row,spools:1,slotId:reels?.[rollIndex]?.id||row.id+':'+rollIndex,reelId:reels?.[rollIndex]?.id,reelNumber:reels?.[rollIndex]?.number,sourceSpools:row.spools,rollInPurchase:rollIndex+1,separate:shelfColourKey(row).separate}))});
  return slots.map((row,index)=>({...row,position:index+1,shelf:Math.floor(index/shelfSize)+1,shelfSlot:index%shelfSize+1})).concat(rows.filter(row=>!Number.isInteger(row.spools)||row.spools<=0).map(row=>({...row,position:'',shelf:'',shelfSlot:''})));
 }
 function getShelfLabelSnapshot(){return {accountKey:dataset.accountKey||'',slots:mode==='shelf'&&dataset.status==='complete'?displayed.filter(row=>row.slotId&&!isUsed(row)):[],uncounted:mode==='shelf'?displayed.filter(row=>!row.slotId).length:0}}
@@ -297,7 +298,7 @@ function renderMatcher(){
  $('shelf-controls').classList.add('hidden');$('paging').classList.add('hidden');$('insights').classList.add('hidden');$('usage-message').classList.add('hidden');
  if(typeof FilamentMatcher==='undefined'){$('results').innerHTML='<p>The matcher could not load. Refresh the page and try again.</p>';$('export').disabled=true;return}
  if(matchProjects===null)matchProjects=[];
- const inventory=combineColours(items.filter(row=>!isUsed(row)));
+ const inventory=combineColours(stockRows().filter(row=>!isUsed(row)));
  matchReport=matchProjects.map(project=>({project,slots:project.slots.map(slot=>({required:slot,result:FilamentMatcher.matches(slot,inventory)}))}));
  activeMatchProject=Math.max(0,Math.min(activeMatchProject,matchReport.length-1));
  if(typeof FilamentRemapUi!=='undefined')FilamentRemapUi.render();
@@ -387,7 +388,7 @@ function exportMatches(){
  const csv='\uFEFF'+[columns,...rows].map(row=>row.map(cell).join(',')).join('\r\n');const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));const anchor=document.createElement('a');anchor.href=url;anchor.download='filament-print-matches.csv';anchor.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
 
-function render(resetPage=true){$('matcher-controls').classList.toggle('hidden',mode!=='match');['inventory-summary','inventory-filters','view-settings'].forEach(id=>$(id).classList.toggle('hidden',mode==='match'));if(mode==='match'){renderMatcher();return}if(resetPage!==false)page=1;const q=$('search').value.trim().toLowerCase();filtered=items.filter(x=>(showUsed||!isUsed(x))&&['brand','material','colour'].every(k=>!$(k).value||$(k).value===(x[k]||'Unknown'))&&(!$('from').value||x.date>=$('from').value)&&(!$('to').value||x.date<=$('to').value)&&(!q||[x.product,x.sourceProduct,x.brand,x.material,x.colour,x.order,x.retailer].join(' ').toLowerCase().includes(q))).sort((a,b)=>b.date.localeCompare(a.date));
+function render(resetPage=true){$('matcher-controls').classList.toggle('hidden',mode!=='match');['inventory-summary','inventory-filters','view-settings'].forEach(id=>$(id).classList.toggle('hidden',mode==='match'));if(mode==='match'){renderMatcher();return}if(resetPage!==false)page=1;const q=$('search').value.trim().toLowerCase();filtered=stockRows().filter(x=>(showUsed||!isUsed(x))&&['brand','material','colour'].every(k=>!$(k).value||$(k).value===(x[k]||'Unknown'))&&(!$('from').value||x.date>=$('from').value)&&(!$('to').value||x.date<=$('to').value)&&(!q||[x.product,x.sourceProduct,x.brand,x.material,x.colour,x.order,x.retailer].join(' ').toLowerCase().includes(q))).sort((a,b)=>b.date.localeCompare(a.date));
 $('results').setAttribute('aria-labelledby',mode+'-tab');$('view-title').textContent=mode==='shelf'?'Colour shelf':mode==='table'?'Filament list':'Your filament';const groups=combineColours(filtered);displayed=mode==='shelf'?arrangeShelf(filtered):familyMode?combineFamilies(filtered):combined?groups:filtered;$('shelf-controls').classList.toggle('hidden',mode!=='shelf');['combine','family','show-used'].forEach(id=>$(id).disabled=mode==='shelf');$('family').setAttribute('aria-pressed',String(familyMode));$('combine').setAttribute('aria-pressed',String(combined));$('show-used').setAttribute('aria-pressed',String(showUsed));const usedTypes=combineColours(items.filter(isUsed)).length;$('show-used').textContent=(showUsed?'Hide used':'Show used')+(usedTypes?' ('+usedTypes+')':'');$('roll-label').textContent=showUsed?'Rolls shown':'Rolls available';$('group-note').textContent=(mode==='shelf'?'Colour families stay together in every sort. Select a colour to find its shelf position. Multicolour and unclassified shades sit at the end; swatches are approximate.':familyMode?'Similar shades across brands and materials. Expand a family for exact types and used marks. Multicolour and uncounted bundles stay separate.':combined?'Exact brand, filament type, shade and roll weight combined. Includes refills; swatches are approximate.':'Individual purchases. Select Combine exact colours to see matching totals.')+(storageWarning?' '+storageWarning:'');const loaded=dataset.status==='complete';$('variants').textContent=loaded?groups.length:'—';$('spools').textContent=loaded?sum(filtered):'—';$('brands').textContent=loaded?unique(filtered,'brand'):'—';$('colours').textContent=loaded?unique(filtered,'colour'):'—';const missing=filtered.filter(x=>!Number.isFinite(x.spools)).length;$('spoolnote').textContent=missing?`Plus ${missing} bundle${missing===1?'':'s'} with unknown roll count`:'Includes spool refills';$('count').textContent=loaded?(mode==='shelf'?`${sum(filtered)} roll positions${missing?' + '+missing+' uncounted bundles':''}`:`${displayed.length} ${familyMode?'colour group':combined?'filament type':'purchase line'}${displayed.length===1?'':'s'}`):'';$('coverage').textContent=dataset.coverage;
 $('notice').classList.toggle('hidden',loaded&&!dataset.notice);$('notice').textContent=dataset.notice||'';
 const totalPages=Math.max(1,Math.ceil(displayed.length/pageSize));page=Math.min(page,totalPages);const visible=displayed.slice((page-1)*pageSize,page*pageSize);$('paging').classList.toggle('hidden',mode==='shelf'||displayed.length<=pageSize);$('prev').disabled=page===1;$('next').disabled=page===totalPages;$('page-status').textContent=`Page ${page} of ${totalPages} · ${displayed.length} ${familyMode?'groups':combined?'types':'lines'}`;$('export').disabled=!filtered.length;$('insights').classList.toggle('hidden',mode==='shelf'||!filtered.length);

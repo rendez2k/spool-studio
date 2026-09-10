@@ -1,6 +1,9 @@
 import { handleLibrary, getLibrary, libraryView } from "./library.mjs";
 import { handleBatch } from "./api.mjs";
 import { handleProductLookup } from "./product-lookup.mjs";
+import {handleSpoolmanSync} from './spoolman-sync.mjs';
+import {handleBarcodeLookup} from './barcode-lookup.mjs';
+import {gmailConfig} from './gmail-config.mjs';
 
 export function appOrigins(value) {
   const origins = (value || "").split(",").map(origin => origin.trim()).filter(Boolean);
@@ -13,7 +16,7 @@ export function appOrigins(value) {
 }
 
 export function returnPath(value) {
-  return ["/", "/index.html", "/nfc.html", "/import.html", "/app.html"].includes(value) ? value : "/";
+  return ["/", "/index.html", "/nfc.html", "/import.html", "/app.html", "/reels.html"].includes(value) || /^\/reels\.html#r=[a-f0-9-]{36}$/.test(value || "") ? value : "/";
 }
 
 export function clerkScripts(publishableKey) {
@@ -34,7 +37,7 @@ function response(body, status, type = "application/json; charset=utf-8", extraH
   return new Response(body, { status, headers });
 }
 
-export async function serveNetlify(request, { authenticate, database, readPage, publishableKey, origins }) {
+export async function serveNetlify(request, { authenticate, database, readPage, publishableKey, origins, gmail }) {
   const url = new URL(request.url);
   const api = url.pathname.startsWith("/api/");
   if (!origins.includes(url.origin)) return response('{"error":"This app address is not configured."}', 403);
@@ -45,6 +48,7 @@ export async function serveNetlify(request, { authenticate, database, readPage, 
   incomingHeaders.delete("x-clerk-user-id");
   const clean = new Request(request, { headers: incomingHeaders });
   try {
+    if (url.pathname === '/api/spoolman-sync') return handleSpoolmanSync(clean, {DB: database()});
     if (["/sign-in", "/sign-out"].includes(url.pathname)) {
       const html = (await readPage("auth.html")).replace("<!-- CLERK -->", clerkScripts(publishableKey));
       return response(request.method === "HEAD" ? null : html, 200, "text/html; charset=utf-8");
@@ -55,16 +59,17 @@ export async function serveNetlify(request, { authenticate, database, readPage, 
     if (!userId && api) return response('{"error":"Sign in to your Spool Studio account."}', 401);
     if (!userId && ["/nfc.html", "/import.html"].includes(url.pathname)) return response(null, 302, "text/plain", { Location: "/sign-in?return_to=" + encodeURIComponent(url.pathname) });
     if (api) {
+      if(url.pathname==='/api/gmail-config')return response(JSON.stringify(gmailConfig(userId,gmail)),request.method==='GET'?200:405);
       const headers = new Headers(clean.headers);
       headers.set("oai-authenticated-user-id", userId);
       const authenticated = new Request(clean, { headers });
       const env = { DB: database() };
-      const result = url.pathname === "/api/library" ? await handleLibrary(authenticated, env) : url.pathname === "/api/phone-batch" ? await handleBatch(authenticated, env) : url.pathname === "/api/product-lookup" ? await handleProductLookup(authenticated) : response('{"error":"Not found."}', 404);
+      const result = url.pathname === "/api/library" ? await handleLibrary(authenticated, env) : url.pathname === "/api/phone-batch" ? await handleBatch(authenticated, env) : url.pathname === "/api/product-lookup" ? await handleProductLookup(authenticated) : url.pathname === "/api/barcode-lookup" ? await handleBarcodeLookup(authenticated) : response('{"error":"Not found."}', 404);
       result.headers.set("Netlify-CDN-Cache-Control", "no-store");
       for (const cookie of state.headers.getSetCookie()) result.headers.append("Set-Cookie", cookie);
       return result;
     }
-    const filename = ({ "/": "index.html", "/index.html": "index.html", "/nfc.html": "nfc.html", "/import.html": "import.html", "/app.html": "app.html" })[url.pathname];
+    const filename = ({ "/": "index.html", "/index.html": "index.html", "/nfc.html": "nfc.html", "/import.html": "import.html", "/app.html": "app.html", "/reels.html": "reels.html" })[url.pathname];
     if (!filename) return response('{"error":"Not found."}', 404);
     const account = '<script id="auth-account" type="application/json">' + JSON.stringify({ userId: userId || "" }).replaceAll("<", "\\u003c") + "</script>";
     let html = (await readPage(filename)).replace("<!-- CLERK -->", account + clerkScripts(publishableKey));

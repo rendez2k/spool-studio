@@ -19,6 +19,10 @@ A private filament inventory for each signed-in user: organise spools, compare a
 - Add and edit filament, roll counts, material, finish, colour and packaging (refill or supplied on a spool).
 - Combine identical filaments or browse colour families and a numbered colour shelf.
 - Mark entries used up, undo, and export CSV.
+- Assign permanent physical spool IDs; print paired spool/box QR labels (60 × 30 mm or larger) that open the owner's private reel record.
+- Record each reel’s location and remaining grams, or sync linked Spoolman estimates with the optional local bridge. Printer consumption reporting and per-tool mapping require separate setup and hardware validation.
+- Look up unknown EAN/UPC codes through an explicit UPCitemdb catalogue request; results are reviewable drafts with limited coverage, not universal identification.
+- Gmail read-only import is staged behind separate configuration and consent. It is disabled by default pending Google setup/verification. See `docs/connections.md` for rollout status and setup.
 - Load Bambu Studio or OrcaSlicer 3MF projects locally, view available embedded previews, and compare colours with available stock. Matte and standard PLA are distinct.
 - Sync a chosen batch to the permanent `/nfc.html` page using the same account on desktop and phone.
 - Install the PWA with its own icon. Write and verify Generic OpenSpool tags using supported Android browsers and compatible printer firmware.
@@ -31,7 +35,7 @@ Every new account starts empty. There are no personal purchase records, connecte
 
 The public `/email-import.html` guide supplies a copyable, read-only email-extraction prompt and an empty Excel-friendly CSV template. The importer accepts that CSV locally (UTF-8, comma or semicolon, 500 entries/1 MB). It uses the same account-bound review/duplicate/save path as OCR. ChatGPT connections are optional and separate from the app; source email contents supplied to ChatGPT do not fall under the on-device processing guarantee. CSV headers are explicit, formulas and malformed records are rejected, unknown swatches require review, and source records are not treated as proof of remaining stock.
 
-Use **Import** to paste order-confirmation text or read a JPG, PNG or WebP screenshot/label photo. English OCR runs in a local web worker using self-hosted Tesseract assets; there is no AI API, external OCR endpoint or connected inbox. It reads printed text, not the physical colour of filament. HEIC and PDF are not supported in this first version; use a screenshot instead.
+Use **Import** to paste order-confirmation text or read a JPG, PNG or WebP screenshot/label photo. English OCR runs in a local web worker using self-hosted Tesseract assets; there is no AI API or external OCR endpoint. The separately gated Gmail feature is optional and not generally enabled. It reads printed text, not the physical colour of filament. HEIC and PDF are not supported in this first version; use a screenshot instead.
 
 Uploads are limited to one image at a time, 10 MB and 20 megapixels; text batches are limited to 60,000 characters and 500 candidate entries. Recognition and extraction are conservative and imperfect: missing fields need review, bundle contents may require manual splitting, and swatches inferred from colour words are explicitly approximate.
 
@@ -51,9 +55,9 @@ Open http://127.0.0.1:8766. Tests build the app first; after changing source, ru
 
 The loopback-only preview uses a fixed development identity and a separate SQLite database in ignored `.local/`. It is not a real login server and must never be exposed publicly. Localhost links are not phone transfer links; NFC requires an HTTPS deployment on the phone.
 
-## Hosting and login
+## Legacy Sites hosting
 
-GitHub stores the source; it does not run the application or database. This app targets **OpenAI Sites**:
+The canonical application runs on Netlify as described above. The repository retains an older **OpenAI Sites** Worker; the new bridge and Gmail configuration endpoints require the Netlify adapter. GitHub stores source rather than running the application or database. In the legacy deployment:
 
 - Sites handles Sign in with ChatGPT and forwards the authenticated user's Site-specific ID.
 - The app enforces ownership on the server for every inventory and phone-batch request.
