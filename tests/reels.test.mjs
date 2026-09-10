@@ -83,7 +83,7 @@ test('local bridge never controls printer, forwards only IDs and absolute weight
  await assert.rejects(syncOnce(config,async()=>Response.json([{id:1,remaining_weight:-1}])) ,/invalid weight/);
 });
 
-test('printed QR images are located by jsQR and decoded by ZXing at 203 and 300 dpi',()=>{
+test('classic and rounded printed QR images decode at 203 and 300 dpi, including thresholded thermal output',()=>{
  const context=vm.createContext({});vm.runInContext(readFileSync(new URL('../out/vendor/qrcode.js',import.meta.url),'utf8'),context);
  const ids=['f69dadc1-c430-46f8-9306-6a308110a94c','b5f5c5d6-201f-4824-8ae2-15d76580b7ab','56829fdb-0799-4e3d-a80d-b03f1aad4cb7',...Array.from({length:20},(_,index)=>{
   const hex=createHash('sha256').update('spool-label-fixture-'+index).digest('hex');
@@ -91,17 +91,32 @@ test('printed QR images are located by jsQR and decoded by ZXing at 203 and 300 
  })];
  for(const id of ids){
   const url=core.url('https://spool-studio.uk',id),code=context.qrcode(0,'M');code.addData(url);code.make();
-  const svg=labels.qrSvg(code);assert.match(svg,/shape-rendering="crispEdges"/);
+  for(const style of ['square','rounded']){
+  const svg=labels.qrSvg(code,style);
+  if(style==='square')assert.match(svg,/shape-rendering="crispEdges"/);
+  else assert.match(svg,/viewBox="0 0/);
   for(const width of [160,236]){
    const rendered=new Resvg(svg,{background:'#ffffff',fitTo:{mode:'width',value:width}}).render();
    const pixels=rendered.pixels,grey=new Uint8ClampedArray(rendered.width*rendered.height);
    for(let index=0;index<grey.length;index++)grey[index]=pixels[index*4+3]===0?255:pixels[index*4];
-   const bitmap=new BinaryBitmap(new HybridBinarizer(new RGBLuminanceSource(grey,rendered.width,rendered.height)));
+   const margin=Math.floor(width*4/(code.getModuleCount()+8));
+   for(let row=0;row<rendered.height;row++)for(let column=0;column<rendered.width;column++){
+    if(row<margin||column<margin||row>=rendered.height-margin||column>=rendered.width-margin)assert.equal(grey[row*rendered.width+column],255);
+   }
+   for(const threshold of [false,true]){
+   const image=new Uint8ClampedArray(pixels),luminance=new Uint8ClampedArray(grey);
+   if(threshold)for(let index=0;index<luminance.length;index++){
+    luminance[index]=luminance[index]<128?0:255;
+    image[index*4]=image[index*4+1]=image[index*4+2]=luminance[index];image[index*4+3]=255;
+   }
+   const bitmap=new BinaryBitmap(new HybridBinarizer(new RGBLuminanceSource(luminance,rendered.width,rendered.height)));
    try{
-    assert.equal(jsQR(new Uint8ClampedArray(pixels),rendered.width,rendered.height)?.data,url);
+    assert.equal(jsQR(image,rendered.width,rendered.height)?.data,url);
     assert.equal(new QRCodeReader().decode(bitmap,new Map([[DecodeHintType.PURE_BARCODE,true]])).getText(),url);
-   }catch(error){throw Error('QR fixture '+id+' failed at '+width+' pixels',{cause:error})}
+   }catch(error){throw Error('QR fixture '+id+' / '+style+' / threshold '+threshold+' failed at '+width+' pixels',{cause:error})}
+   }
+  }
   }
  }
- assert.match(readFileSync(new URL('../out/labels.js',import.meta.url),'utf8'),/holder.innerHTML=SpoolLabels.qrSvg\(code\)/);
+ assert.match(readFileSync(new URL('../out/labels.js',import.meta.url),'utf8'),/holder.innerHTML=SpoolLabels.qrSvg\(code,node\('label-qr-style'\).value\)/);
 });

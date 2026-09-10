@@ -12,6 +12,9 @@
  </div><div id="label-custom" class="label-fields" hidden><label>Width (mm)<input id="label-width" type="number" min="40" max="210" step="0.1" value="60"></label><label>Height (mm)<input id="label-height" type="number" min="25" max="297" step="0.1" value="30"></label></div>
  <div class="label-fields"><label>First shelf position<input id="label-first" type="number" min="1" step="1" value="1"></label><label>Last shelf position<input id="label-last" type="number" min="1" step="1" value="1"></label></div>
  <label class="label-qr-toggle"><input id="label-qr" type="checkbox" checked> Include private spool QR link (60 × 30 mm or larger)</label>
+ <div class="label-fields"><label>QR appearance<select id="label-qr-style"><option value="square">Classic · crisp thermal print</option><option value="rounded">Soft corners</option></select></label><label>Location on label<select id="label-location"><option value="shelf">Shelf position</option><option value="none">No location</option><option value="saved">Saved reel location</option><option value="custom">Custom · box, drawer, dry box…</option></select></label></div>
+ <div id="label-custom-location" class="label-fields" hidden><label>Location for this batch<input id="label-location-text" maxlength="60" placeholder="e.g. Dry box A"></label></div>
+ <details class="label-content"><summary>Label details</summary><div class="label-content-options"><label class="label-qr-toggle"><input id="label-show-brand" type="checkbox" checked> Brand</label><label class="label-qr-toggle"><input id="label-show-material" type="checkbox" checked> Material &amp; finish</label><label class="label-qr-toggle"><input id="label-show-stock" type="checkbox" checked> Weight &amp; packaging</label></div><p class="label-hint">Colour and spool number always stay visible. Custom locations apply to these labels only; they do not change your library.</p></details>
  <p class="label-print-settings"><strong id="label-paper-size"></strong><span>Margins: None · Scale: 100% · Headers and footers: Off</span><span>Match the loaded labels. A larger driver paper size leaves empty space; the app cannot change these printer settings.</span></p>
  <p id="label-status" class="label-hint" role="status"></p><div class="actions"><button id="label-print" class="primary" type="submit">Print labels</button><button id="label-refresh" type="button">Use current shelf</button></div>
  <p class="label-hint">Choose the same paper size in your printer settings, 100% / actual size, no margins, and headers and footers off. Test one position first. MUNBYN uses your usual printer driver or print service—not a direct Bluetooth connection from this page. <a href="/guide.html#labels">Printing help</a></p>
@@ -21,17 +24,19 @@
  function label(row){
   const element=document.createElement('article');element.className='spool-print-label';
   const add=(tag,className,text)=>{const child=document.createElement(tag);child.className=className;child.textContent=text;element.append(child)};
-  add('div','label-position',row.reelId?SpoolReels.label(row.reelNumber):'#'+row.position+' · Shelf '+row.shelf+' / '+row.shelfSlot);
+  add('div','label-position',row.reelId?SpoolReels.label(row.reelNumber):'Position #'+row.position);
   add('strong','label-colour',row.colour);
-  add('div','label-brand',row.brand);
-  add('div','label-material',[row.product,!row.product.toLowerCase().includes(row.material.toLowerCase())?row.material:'',row.finish!=='unknown'&&!(row.finish==='standard'&&/basic/i.test(row.product))&&!row.product.toLowerCase().includes(row.finish.toLowerCase())?row.finish:''].filter(Boolean).join(' · '));
-  add('div','label-stock',[row.weightGrams?row.weightGrams+' g':'',row.packaging==='refill'?'Refill':row.packaging==='spooled'?'With spool':''].filter(Boolean).join(' · '));
+  if(node('label-show-brand').checked)add('div','label-brand',row.brand);
+  if(node('label-show-material').checked)add('div','label-material',[row.product,!row.product.toLowerCase().includes(row.material.toLowerCase())?row.material:'',row.finish!=='unknown'&&!(row.finish==='standard'&&/basic/i.test(row.product))&&!row.product.toLowerCase().includes(row.finish.toLowerCase())?row.finish:''].filter(Boolean).join(' · '));
+  if(node('label-show-stock').checked)add('div','label-stock',[row.weightGrams?row.weightGrams+' g':'',row.packaging==='refill'?'Refill':row.packaging==='spooled'?'With spool':''].filter(Boolean).join(' · '));
+  const location=node('label-location').value;
+  const locationText=location==='shelf'?'Shelf '+row.shelf+' / '+row.shelfSlot:location==='saved'?row.reelLocation:location==='custom'?node('label-location-text').value.trim():'';
+  if(locationText)add('div','label-shelf',locationText);
   if(row.reelId){
-   add('div','label-shelf','Shelf '+row.shelf+' / '+row.shelfSlot);
    if(node('label-qr').checked){
     element.classList.add('has-reel-qr');
     const code=qrcode(0,'M');code.addData(SpoolReels.url(window.location.origin,row.reelId));code.make();
-    const holder=document.createElement('div');holder.className='label-code';holder.setAttribute('aria-label','Open '+SpoolReels.label(row.reelNumber)+' in your signed-in library');holder.innerHTML=SpoolLabels.qrSvg(code);element.append(holder);
+    const holder=document.createElement('div');holder.className='label-code';holder.setAttribute('aria-label','Open '+SpoolReels.label(row.reelNumber)+' in your signed-in library');holder.innerHTML=SpoolLabels.qrSvg(code,node('label-qr-style').value);element.append(holder);
    }
   }
   return element;
@@ -39,7 +44,7 @@
  function stale(){return !snapshot||SpoolLabels.signature(snapshot)!==SpoolLabels.signature(sourceSnapshot())}
  function settings(){const [width,height]=SpoolLabels.dimensions(node('label-size').value,node('label-width').value,node('label-height').value);return {width,height,start:Number(node('label-first').value),end:Number(node('label-last').value),copies:Number(node('label-copies').value)}}
  function sizeElements(width,height){
-  for(const element of [printRoot,node('label-preview')]){element.style.setProperty('--label-width',width+'mm');element.style.setProperty('--label-height',height+'mm')}
+  for(const element of [printRoot,node('label-preview')]){element.style.setProperty('--label-width',width+'mm');element.style.setProperty('--label-height',height+'mm');element.style.setProperty('--label-code-size',Math.max(20,Math.min(32,width*.34,height-8))+'mm')}
  }
  function overflow(element){return element.scrollHeight>element.clientHeight+1||element.scrollWidth>element.clientWidth+1}
  function fitLabel(element){
@@ -48,16 +53,22 @@
  }
  function render(){
   node('label-custom').hidden=node('label-size').value!=='custom';
+  node('label-qr-style').disabled=!node('label-qr').checked;
+  node('label-custom-location').hidden=node('label-location').value!=='custom';
+  node('label-location-text').disabled=node('label-custom-location').hidden;
   node('label-width').disabled=node('label-height').disabled=node('label-custom').hidden;node('label-print').disabled=true;
   planned=[];node('label-preview').replaceChildren();node('label-page').textContent='';node('label-prev').disabled=node('label-next').disabled=true;
   try{
    if(stale())throw Error('The library, selection or shelf changed. Refresh the label selection before printing.');
    const options=settings();planned=SpoolLabels.plan(snapshot,options);node('label-paper-size').textContent='Printer paper: '+options.width+' × '+options.height+' mm';
-   if(node('label-qr').checked&&planned.some(row=>row.reelId)&&(options.width<60||options.height<30))throw Error('QR labels need at least 60 × 30 mm. Choose a larger size or untick QR links.');
+   if(node('label-qr').checked&&(options.width<60||options.height<30))throw Error('QR labels need at least 60 × 30 mm. Choose a larger size or untick QR links.');
+   if(node('label-location').value==='custom'&&!node('label-location-text').value.trim())throw Error('Enter a location for this batch, or choose No location.');
    sizeElements(options.width,options.height);
    previewIndex=Math.min(previewIndex,planned.length-1);const preview=label(planned[previewIndex]);node('label-preview').append(preview);fitLabel(preview);
    node('label-page').textContent=(previewIndex+1)+' / '+planned.length;node('label-prev').disabled=previewIndex===0;node('label-next').disabled=previewIndex===planned.length-1;
-   node('label-status').textContent=planned.length+' labels · '+(options.end-options.start+1)+' rolls · '+options.width+' × '+options.height+' mm.'+(planned.some(row=>!row.reelId)?' Shelf positions only for rolls without permanent IDs.':' QR links require the owner to sign in.')+(snapshot.uncounted?' '+snapshot.uncounted+' uncounted bundle'+(snapshot.uncounted===1?'':'s')+' excluded.':'');
+   const missing=planned.filter(row=>!row.reelId).length/options.copies;
+   if(node('label-qr').checked&&missing)throw Error(missing+' roll'+(missing===1?' has':'s have')+' no permanent ID. Assign permanent IDs and refresh the library, or untick QR links to print text-only labels.');
+   node('label-status').textContent=planned.length+' labels · '+(options.end-options.start+1)+' rolls · '+options.width+' × '+options.height+' mm.'+(missing?' Position numbers are not permanent spool IDs.':node('label-qr').checked?' QR links require the owner to sign in.':' Text-only labels.')+(node('label-location').value==='saved'&&planned.some(row=>!row.reelLocation)?' Reels without a saved location leave it blank.':'')+(node('label-qr').checked&&node('label-qr-style').value==='rounded'?' Test a printed Soft corners code on your phone before a full batch.':'')+(snapshot.uncounted?' '+snapshot.uncounted+' uncounted bundle'+(snapshot.uncounted===1?'':'s')+' excluded.':'');
    node('label-print').disabled=false;
   }catch(error){node('label-status').textContent=error.message}
  }

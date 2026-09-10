@@ -1,5 +1,15 @@
 [
   {
+    "version": "1.7.3",
+    "date": "2026-09-10",
+    "title": "Labels your way",
+    "changes": [
+      "Choose crisp Classic or Soft corners QR styling. Codes grow on larger labels while keeping a clear white border; always test one printed code before a batch.",
+      "Show shelf positions, saved reel locations, your own batch location or no location. Hide optional brand, material and weight details for a cleaner label.",
+      "QR printing now asks you to assign missing permanent spool IDs rather than silently leaving codes off. Text-only labels remain available."
+    ]
+  },
+  {
     "version": "1.7.2",
     "date": "2026-09-10",
     "title": "Bigger, more readable labels",
