@@ -15,6 +15,7 @@
   return snapshot.slots.slice(start-1,end).flatMap(row=>Array.from({length:copies},()=>({position:row.position,shelf:row.shelf,shelfSlot:row.shelfSlot,reelId:row.reelId,reelNumber:row.reelNumber,colour:String(row.colour||'Unknown colour'),brand:String(row.brand||'Unknown brand'),product:String(row.product||''),material:String(row.material||'Unknown material'),finish:String(row.finish||'unknown'),weightGrams:row.weightGrams,packaging:row.packaging})));
  }
  function signature(snapshot){return JSON.stringify(snapshot)}
- const api={presets,dimensions,plan,signature};
+ function qrSvg(code){return code.createSvgTag({cellSize:4,margin:16,scalable:true}).replace('<svg ','<svg shape-rendering="crispEdges" ')}
+ const api={presets,dimensions,plan,signature,qrSvg};
  if(typeof module==='object'&&module.exports)module.exports=api;else root.SpoolLabels=api;
 })(typeof globalThis==='object'?globalThis:this);

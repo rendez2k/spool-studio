@@ -21,6 +21,7 @@
     "drizzle-kit": "0.31.10",
     "drizzle-orm": "0.45.2",
     "esbuild": "0.28.2",
+    "jsqr": "1.4.0",
     "tesseract.js": "7.0.0"
   },
   "dependencies": {

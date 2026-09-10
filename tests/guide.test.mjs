@@ -38,3 +38,14 @@ test('the visible import example produces the promised two separate spools',()=>
  assert.equal(entries[1].spool.spools,1);assert.equal(entries[1].spool.finish,'standard');
  assert.equal(entries[1].spool.colour,'Jade White');assert.equal(entries[1].spool.packaging,'spooled');
 });
+
+test('U1 setup distinguishes connection, physical mappings and consumption proof',()=>{
+ const html=read('guide.html');
+ assert.match(html,/id="u1-spoollink"/);
+ assert.match(html,/built-in <strong>SpoolLink<\/strong>/);
+ assert.match(html,/Tools 1–4 correspond to channels 0–3/);
+ assert.match(html,/node scripts\/spoolman-check.mjs/);
+ assert.match(html,/successful connection check is not a consumption test/);
+ assert.match(html,/without changing printer settings or revealing tag UIDs/);
+ assert.match(html,/Leave an unknown physical reel unassigned/);
+});

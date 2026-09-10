@@ -29,7 +29,7 @@
    if(node('label-qr').checked){
     element.classList.add('has-reel-qr');
     const code=qrcode(0,'M');code.addData(SpoolReels.url(window.location.origin,row.reelId));code.make();
-    const holder=document.createElement('div');holder.className='label-code';holder.setAttribute('aria-label','Open '+SpoolReels.label(row.reelNumber)+' in your signed-in library');holder.innerHTML=code.createSvgTag({cellSize:4,margin:16,scalable:true});element.append(holder);
+    const holder=document.createElement('div');holder.className='label-code';holder.setAttribute('aria-label','Open '+SpoolReels.label(row.reelNumber)+' in your signed-in library');holder.innerHTML=SpoolLabels.qrSvg(code);element.append(holder);
    }
   }
   return element;

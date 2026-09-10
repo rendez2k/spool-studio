@@ -6,6 +6,8 @@ Use **More → Physical spools & usage → Assign permanent IDs**. Assignment is
 
 QR labels carry only a same-origin private reel URL with its UUID in the fragment. Login alone is insufficient: the record must belong to that account. Paired box/spool copies share the same UUID. QR printing requires at least 60 × 30 mm. Verify one actual label on your printer and phone before a batch.
 
+QR regression tests render 23 deterministic reel URLs (including three observed failing finder patterns) at the 20 mm code's approximate 203/300 dpi sizes. jsQR locates and reads each image; ZXing independently decodes its known, axis-aligned matrix with PURE_BARCODE. The previous single random test conflated ZXing's finder-pattern errors with invalid QR payloads, including at larger and integer-module image sizes. SVG modules now request crisp edges. These checks establish digital rendering/encoding, not camera focus, thermal output, curvature or universal scanner compatibility; physical acceptance is still required.
+
 ## Local Spoolman bridge
 
 Requires Node.js 22+, a reachable local Spoolman server, and individually mapped physical spool IDs. In Physical spools, create a revocable bridge key and download the private JSON configuration. From the repository folder:
@@ -45,6 +47,8 @@ Read-only connection diagnosis (replace both addresses):
 ```sh
 node scripts/spoolman-check.mjs http://printer-address http://spoolman-address:7912
 ```
+
+On supported U1 firmware, this also reads all four tools' Spoolman assignments and reports missing or duplicate records. Tool numbers 1–4 correspond to channels 0–3. Tag presence is reduced to a boolean; no tag UID, spool name or private notes are included. An unavailable per-tool query is reported as unknown, not as four empty tools. Reported filament/tag presence and IDs still need physical confirmation. A different server address may be an alias; resolve any mismatch before trusting record comparisons.
 
 For current paxx12 U1 firmware, prefer the built-in **SpoolLink** integration. Older `spoolman_multi_tool` includes can conflict with it. Confirm the actual spool before using Filament Manager or `SET_SPOOL_ID CHANNEL=<0–3> SPOOL_ID=<confirmed-id>`; this also binds the detected tag UID. A connected status alone does not prove correct per-tool consumption. See the [firmware's Spoolman documentation](https://github.com/paxx12-snapmaker-u1/SnapmakerU1-Extended-Firmware/blob/develop/docs/spoolman.md).
 

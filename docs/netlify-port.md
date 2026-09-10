@@ -10,8 +10,8 @@ All features live in `out/` and the shared server modules. The legacy Sites Work
 - Netlify serves the app and functions, Clerk handles verified account sessions, and Netlify Database (Postgres) stores account-scoped inventory and phone batches.
 - Google sign-in requests only basic identity, not Gmail access. Production and preview use separate Clerk instances and database branches.
 - The PWA, app-management page, reviewed text/image/CSV imports, 3MF matching/remapping, shelf labels and quick-entry methods are implemented.
-- Common/custom brand and type choices preserve matte/standard distinctions. Product lookup creates a reviewable draft; barcode scanning matches only the user's own saved products.
-- Automatic printer-consumption tracking remains unconnected. Roll counts, shelf positions and NFC tags are not measurements of remaining grams.
+- Common/custom brand and type choices preserve matte/standard distinctions. Product lookup creates a reviewable draft; barcode scanning checks the user's saved products first, with an explicit external UPCitemdb lookup for unknown EAN/UPC codes. External coverage is limited, not universal.
+- Permanent reel IDs, reviewed Spoolman transfers and a revocable local weight bridge are implemented. Automatic printer-consumption tracking still requires confirmed per-tool spool assignments and a supervised hardware acceptance test. Roll counts, shelf positions and NFC tags are not measurements of remaining grams.
 - Owner migration has been completed and checked privately. No owner's identity, inventory snapshot or phone batch is bundled with the app. Other users' legacy libraries are not migrated automatically.
 - The privacy notice remains a draft pending operator review; a working deployment is not public-launch or legal acceptance.
 
