@@ -2,7 +2,7 @@
 window.addEventListener('load', async () => {
   const status = document.getElementById('auth-status');
   const requested = new URLSearchParams(location.search).get('return_to');
-  const destination = (['/', '/index.html', '/nfc.html', '/import.html', '/app.html', '/reels.html'].includes(requested) || /^\/reels\.html#r=[a-f0-9-]{36}$/.test(requested || '')) ? requested : '/';
+  const destination = (['/', '/index.html', '/nfc.html', '/import.html', '/app.html', '/reels.html', '/welcome.html'].includes(requested) || /^\/reels\.html#r=[a-f0-9-]{36}$/.test(requested || '')) ? requested : '/';
   try {
     if (!window.Clerk || !window.__internal_ClerkUICtor) throw Error('Sign-in could not load. Check your connection and refresh.');
     await window.Clerk.load({ ui: { ClerkUI: window.__internal_ClerkUICtor } });

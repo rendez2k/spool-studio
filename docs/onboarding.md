@@ -1,0 +1,11 @@
+# Welcome and setup
+
+`/welcome.html` is a Netlify function-rendered shell with Clerk sign-in support. It loads private checklist state through the authenticated `/api/library` endpoint. New and existing libraries show a non-blocking reminder; it can be hidden per account and reopened through More → Welcome & setup or App & device. No automatic redirects, pop-ups, hardware writes or mailbox connections occur.
+
+The six steps cover adding stock, 3MF matching, phone/PWA, permanent IDs/labels, Android NFC and Spoolman usage. Only the first step is derived automatically, from whether the account has any inventory entries. Optional steps are user-confirmed done, skipped or pending. They do not grant permissions, verify hardware, enable integrations or disable skipped features. Spoolman facts report only bridge configuration, mapped records and whether a sync was received; they do not claim consumption was tested.
+
+`setup-core.js` owns allowed states and content. A `kind: setup` library mutation includes the expected account, current revision and idempotent request ID. It changes only the checklist object. Unknown step/state keys are rejected. Revision conflicts require fresh review; uncertain retries retain their request ID. Checklist GET failures never fabricate an empty or completed library. Leaving the page discards delayed results.
+
+Progress and dismissal sync across devices in the existing account-owned library payload. Account-data export includes `setup`; application-data erasure removes it. No extra personal data, cookies, analytics, external requests or database migration are added. The welcome page uses the existing Clerk integration; sign-in accepts only the allowlisted welcome return path.
+
+Actions link to live features, not a simulated tour. Library links with `?setup=add`, `?setup=match` or `?setup=shelf` open the requested view for a signed-in account, then remove the query. They never save stock, run imports or touch printer settings. Gmail access remains independently gated within Import; this checklist does not make the private importer public. Cost-only reimports are explicitly not promised.

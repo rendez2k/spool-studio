@@ -15,6 +15,7 @@ function libraryControls(){
  document.querySelectorAll('[data-use],[data-edit]').forEach(button=>button.disabled=libraryBusy);
  window.SpoolAssist?.controls();
  window.CollectionTools?.controls();
+ window.SetupReminder?.update();
 }
 function applyLibrary(value){
  if(value.accountKey!==dataset.accountKey){

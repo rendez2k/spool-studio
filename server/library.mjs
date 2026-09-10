@@ -2,6 +2,7 @@ import { boundedJson } from "./api.mjs";
 import SpoolCatalog from "../out/spool-catalog.js";
 import SpoolCost from '../out/cost-core.js';
 import FilamentColours from '../out/colour-catalog.js';
+import SpoolSetup from '../out/setup-core.js';
 import {addReels, initialiseReels, updateReel, updateItemStatus, tokenHash} from './reels.mjs';
 import {linkSpoolman} from './spoolman-mapping.mjs';
 
@@ -53,7 +54,7 @@ export async function getLibrary(database, userId) {
 
 export function libraryView(row, userId) {
   const data = JSON.parse(row.payload);
-  return { status: "complete", items: data.items.map(FilamentColours.resolve), reels: data.reels ?? null, bridge: { enabled: Boolean(data.bridgeHash), lastSync: data.bridgeLastSync || null }, revision: row.revision, accountKey: userId, coverage: "Your private, account-synced filament inventory.", notice: "", updatedAt: row.updated_at };
+  return { status: "complete", items: data.items.map(FilamentColours.resolve), setup: SpoolSetup.preferences(data.setup), reels: data.reels ?? null, bridge: { enabled: Boolean(data.bridgeHash), lastSync: data.bridgeLastSync || null }, revision: row.revision, accountKey: userId, coverage: "Your private, account-synced filament inventory.", notice: "", updatedAt: row.updated_at };
 }
 
 export async function handleLibrary(request, env) {
@@ -70,14 +71,16 @@ export async function handleLibrary(request, env) {
       if (!Number.isSafeInteger(input.baseRevision) || input.baseRevision < 1 || typeof input.requestId !== "string" || !/^[a-zA-Z0-9-]{16,64}$/.test(input.requestId)) throw Error("Invalid library request.");
     } catch (error) { return json({ error: error.message }, 400); }
     if (input.kind === "import" && input.expectedAccountKey !== userId) return json({ error: "The signed-in account changed. Reopen the importer before saving." }, 409);
-    if (['bulk-edit','reel','initialise-reels','bridge-create','bridge-revoke','spoolman-mappings'].includes(input.kind) && input.expectedAccountKey !== userId) return json({error:'The signed-in account changed. Refresh before saving.'},409);
+    if (['setup','bulk-edit','reel','initialise-reels','bridge-create','bridge-revoke','spoolman-mappings'].includes(input.kind) && input.expectedAccountKey !== userId) return json({error:'The signed-in account changed. Refresh before saving.'},409);
     const row = await getLibrary(env.DB, userId);
     if (row.request_id === input.requestId) return json(libraryView(row, userId));
     if (row.revision !== input.baseRevision) return json({ error: "Your library changed elsewhere. Refresh the library, then try again; your form has been kept." }, 409);
     const data = JSON.parse(row.payload);
     let bridgeToken;
     try {
-      if (input.kind === 'bulk-edit') {
+      if (input.kind === 'setup') {
+        SpoolSetup.update(data,input.setup);
+      } else if (input.kind === 'bulk-edit') {
         const allowed = ['brand','product','material','finish','packaging','date','notes'];
         if (input.reviewed !== true || !Array.isArray(input.ids) || !input.ids.length || input.ids.length > 1000 || new Set(input.ids).size !== input.ids.length || input.ids.some(id => typeof id !== 'string')) throw Error('Review the selected entries before saving.');
         if (!input.patch || typeof input.patch !== 'object' || Array.isArray(input.patch) || !Object.keys(input.patch).length || Object.keys(input.patch).some(key => !allowed.includes(key))) throw Error('Choose supported fields to change. Counts, weights and spool IDs cannot be bulk edited.');

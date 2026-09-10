@@ -12,7 +12,7 @@ for (const target of [publicRoot, pagesRoot]) {
   await rm(target, { recursive: true, force: true });
   await mkdir(target, { recursive: true });
 }
-const privatePages = new Set(["index.html", "nfc.html", "import.html", "app.html", "reels.html"]);
+const privatePages = new Set(["index.html", "nfc.html", "import.html", "app.html", "reels.html", "welcome.html"]);
 function portableText(content) {
   return content.replaceAll("/signin-with-chatgpt", "/sign-in").replaceAll("/signout-with-chatgpt", "/sign-out").replaceAll("Sign in with ChatGPT", "Sign in").replaceAll("same ChatGPT account", "same Spool Studio account");
 }

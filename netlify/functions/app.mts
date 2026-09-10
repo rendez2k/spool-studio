@@ -25,4 +25,4 @@ export default async (request: Request) => {
   }
 };
 
-export const config: Config = { path: ["/", "/index.html", "/nfc.html", "/import.html", "/app.html", "/reels.html", "/api/*", "/sign-in", "/sign-out"] };
+export const config: Config = { path: ["/", "/index.html", "/nfc.html", "/import.html", "/app.html", "/reels.html", "/welcome.html", "/api/*", "/sign-in", "/sign-out"] };

@@ -19,7 +19,7 @@ export function appOrigins(value) {
 }
 
 export function returnPath(value) {
-  return ["/", "/index.html", "/nfc.html", "/import.html", "/app.html", "/reels.html"].includes(value) || /^\/reels\.html#r=[a-f0-9-]{36}$/.test(value || "") ? value : "/";
+  return ["/", "/index.html", "/nfc.html", "/import.html", "/app.html", "/reels.html", "/welcome.html"].includes(value) || /^\/reels\.html#r=[a-f0-9-]{36}$/.test(value || "") ? value : "/";
 }
 
 export function clerkScripts(publishableKey) {
@@ -79,7 +79,7 @@ export async function serveNetlify(request, { authenticate, database, readPage, 
       for (const cookie of state.headers.getSetCookie()) result.headers.append("Set-Cookie", cookie);
       return result;
     }
-    const filename = ({ "/": "index.html", "/index.html": "index.html", "/nfc.html": "nfc.html", "/import.html": "import.html", "/app.html": "app.html", "/reels.html": "reels.html" })[url.pathname];
+    const filename = ({ "/": "index.html", "/index.html": "index.html", "/nfc.html": "nfc.html", "/import.html": "import.html", "/app.html": "app.html", "/reels.html": "reels.html", "/welcome.html": "welcome.html" })[url.pathname];
     if (!filename) return response('{"error":"Not found."}', 404);
     const account = '<script id="auth-account" type="application/json">' + JSON.stringify({ userId: userId || "" }).replaceAll("<", "\\u003c") + "</script>";
     let html = (await readPage(filename)).replace("<!-- CLERK -->", account + clerkScripts(publishableKey));

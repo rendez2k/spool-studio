@@ -1,5 +1,13 @@
 [
   {
+    "version": "1.3.0",
+    "date": "2026-09-10",
+    "title": "Welcome to your workshop",
+    "changes": [
+      "An optional welcome checklist guides you from your first spool to print matching, mobile setup, labels, NFC and Spoolman. Progress follows your account, and you can skip steps or hide the reminder without changing stock or connections."
+    ]
+  },
+  {
     "version": "1.2.0",
     "date": "2026-09-10",
     "title": "Manufacturer colour matching",
