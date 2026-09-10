@@ -15,7 +15,7 @@ export function configuration(value){
  const origin=new URL(value.origin);
  if(origin.protocol!=='https:'||origin.origin!==value.origin||origin.username||origin.password)throw Error('Use your HTTPS Spool Studio origin.');
  if(value.allowPrinterWrites!==true||typeof value.token!=='string'||!/^[A-Za-z0-9+/=]+\.[a-f0-9-]{72}$/.test(value.token))throw Error('Use a private printer bridge configuration and explicitly enable allowPrinterWrites.');
- if(value.printerApiKey!==undefined&&(typeof value.printerApiKey!=='string'||!/^[a-zA-Z0-9_-]{1,200}$/.test(value.printerApiKey)))throw Error('Invalid local printer API key.');
+ if(value.printerApiKey!==undefined&&value.printerApiKey!==''&&(typeof value.printerApiKey!=='string'||!/^[a-zA-Z0-9_-]{1,200}$/.test(value.printerApiKey)))throw Error('Invalid local printer API key.');
  return {origin:origin.origin,token:value.token,printerUrl:localOrigin(value.printerUrl),spoolmanUrl:value.spoolmanUrl?localOrigin(value.spoolmanUrl):null,printerApiKey:value.printerApiKey||'',allowPrinterWrites:true};
 }
 async function get(config,route,transport){

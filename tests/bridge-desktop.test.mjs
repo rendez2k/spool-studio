@@ -10,6 +10,16 @@ const require=createRequire(import.meta.url),{BridgeController}=require('../brid
 const config={origin:'https://spool-studio.uk',printerUrl:'http://192.168.1.26',allowPrinterWrites:true,token:btoa('test-user')+'.'+crypto.randomUUID()+crypto.randomUUID()};
 const snapshot=Core.snapshot({ready:true,supported:true,canLink:false,tools:Array.from({length:4},()=>({vendor:'Generic',material:'PLA',subtype:'Basic',rgba:'FFFFFFFF',spoolmanId:0,present:true}))});
 
+test('normalized printer configurations can be imported, restored and polled again',()=>{
+ for(const input of [config,{...config,printerApiKey:''},{...config,printerApiKey:'valid-local-key'}]){
+  const normalized=configuration(input);
+  assert.deepEqual(configuration(normalized),normalized);
+  const controller=new BridgeController({configuration});
+  controller.configure(normalized);assert.equal(controller.status().configured,true);
+ }
+ for(const printerApiKey of [null,42,'bad key','x'.repeat(201)])assert.throws(()=>configuration({...config,printerApiKey}));
+});
+
 test('desktop import and read-only check cannot send printer jobs or expose credentials',async()=>{
  let writes=0,checks=0;
  const controller=new BridgeController({configuration,inspectPrinter:async()=>{checks++;return snapshot},bridgeOnce:async()=>{writes++}});
