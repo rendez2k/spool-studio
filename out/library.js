@@ -8,14 +8,16 @@ function libraryControls(){
  $('add-spool').disabled=libraryBusy||dataset.status!=='complete';
  $('match-files').disabled=libraryBusy||dataset.status!=='complete';
  $('nfc-sync').disabled=libraryBusy||dataset.status!=='complete';
- $('save-spool').disabled=libraryBusy;
+ $('save-spool').disabled=libraryBusy||Boolean(window.SpoolAssist?.busy());
  $('close-spool').disabled=libraryBusy;
  $('refresh-library').hidden=!signedIn;
  $('refresh-library').disabled=libraryBusy||libraryRefreshing;
  document.querySelectorAll('[data-use],[data-edit]').forEach(button=>button.disabled=libraryBusy);
+ window.SpoolAssist?.controls();
 }
 function applyLibrary(value){
  if(value.accountKey!==dataset.accountKey){
+  window.SpoolAssist?.clear();
   releaseMatchPreviews(matchProjects);matchProjects=null;matchReport=[];matchSyncEnabled=false;lastUsageChange=null;pendingLibraryRequest=null;
   $('nfc-transfer').classList.add('hidden');$('nfc-share-link').value='';$('nfc-qr').replaceChildren();$('spool-dialog').close();$('spool-form').reset();editingSpoolId=null;
  }
@@ -77,6 +79,7 @@ function fillSpoolForm(row){
  $('spool-date').value=row?.date||new Date().toLocaleDateString('en-CA');
  $('spool-packaging').value=row?packaging(row):'spooled';$('spool-error').textContent='';
  $('save-spool').textContent=row?'Save changes':'Add to library';
+ window.SpoolAssist?.reset(row);
 }
 function openSpoolForm(id){
  if(libraryBusy||dataset.status!=='complete')return;
@@ -93,8 +96,9 @@ $('spool-dialog').addEventListener('cancel',event=>{if(libraryBusy)event.prevent
 $('spool-sample').oninput=()=>{$('spool-hex').value=$('spool-sample').value.toUpperCase()};
 $('spool-hex').oninput=()=>{if(/^#[\da-f]{6}$/i.test($('spool-hex').value))$('spool-sample').value=$('spool-hex').value};
 $('spool-form').onsubmit=async event=>{
- event.preventDefault();if(!$('spool-form').reportValidity())return;
+ event.preventDefault();if(window.SpoolAssist?.busy()||!$('spool-form').reportValidity())return;
  const spool={};for(const key of ['brand','product','material','finish','colour','hex','packaging','date','notes'])spool[key]=$('spool-'+key).value;
+ if(window.SpoolAssist){try{Object.assign(spool,window.SpoolAssist.fields())}catch(error){$('spool-error').textContent=error.message;return}}
  spool.spools=$('spool-count').value===''?null:Number($('spool-count').value);
  spool.weightGrams=$('spool-weight').value===''?null:Number($('spool-weight').value);
  if(await saveLibraryAction({kind:editingSpoolId?'edit':'add',id:editingSpoolId,spool})){$('spool-dialog').close();if(!editingSpoolId)reset()}

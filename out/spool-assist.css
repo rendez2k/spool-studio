@@ -1,0 +1,18 @@
+#spool-assist { margin: 16px 0 24px; padding-bottom: 16px; border-bottom: 1px solid var(--line); }
+#spool-assist [hidden], .spool-fields [hidden] { display: none !important; }
+.assist-methods { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+.assist-methods button { flex: 1; font-size: .8125rem; padding: 8px 12px; white-space: nowrap; }
+.assist-methods button[aria-pressed=true] { color: var(--accent); border-color: var(--accent); background: var(--tint); }
+.assist-input-row { display: flex; align-items: end; gap: 8px; }
+.assist-input-row label { flex: 1; min-width: 0; }
+.assist-input-row input { width: 100%; }
+.assist-input-row button { flex: none; }
+#spool-assist .meta { margin: 10px 0; max-width: 75ch; }
+.assist-result { margin-top: 14px; }
+.assist-result strong { display: block; overflow-wrap: anywhere; }
+.assist-result button { display: block; width: 100%; text-align: left; margin-top: 8px; }
+#spool-assist video { width: 100%; max-height: 220px; object-fit: contain; background: #101820; margin-top: 12px; border-radius: 8px; }
+.spool-fields select + input { margin-top: 6px; }
+.assist-source { overflow-wrap: anywhere; font-size: .8125rem; }
+#spool-assist :focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+@media (max-width: 480px) { .assist-input-row { flex-wrap: wrap; } .assist-input-row label { flex-basis: 100%; } .assist-input-row button { flex: 1; } }

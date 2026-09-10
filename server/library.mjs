@@ -1,4 +1,5 @@
 import { boundedJson } from "./api.mjs";
+import SpoolCatalog from "../out/spool-catalog.js";
 
 const materials = ["PLA", "PLA+", "PETG", "ABS", "ASA", "TPU", "PA", "PC", "PVA", "HIPS", "Other"];
 const finishes = ["standard", "matte", "silk", "marble", "sparkle", "wood", "glow", "satin", "metal", "unknown"];
@@ -21,7 +22,10 @@ export function validateSpool(input) {
   if (input.spools !== null && (!Number.isInteger(input.spools) || input.spools < 1 || input.spools > 500)) throw Error("Enter 1–500 rolls, or leave it blank if unknown.");
   if (input.weightGrams !== null && (!Number.isInteger(input.weightGrams) || input.weightGrams < 1 || input.weightGrams > 10000)) throw Error("Enter 1–10000 grams per roll, or leave it blank.");
   if (typeof input.date !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(input.date) || !Number.isFinite(Date.parse(input.date)) || new Date(input.date).toISOString().slice(0, 10) !== input.date) throw Error("Choose a valid date.");
-  return { brand, product, colour, notes, material: input.material, finish: input.finish, packaging: input.packaging, hex: input.hex.toUpperCase(), spools: input.spools, weightGrams: input.weightGrams, date: input.date };
+  const optional = {};
+  if (input.barcode !== undefined) optional.barcode = SpoolCatalog.barcode(input.barcode);
+  if (input.sourceUrl !== undefined) optional.sourceUrl = SpoolCatalog.sourceUrl(input.sourceUrl);
+  return { brand, product, colour, notes, material: input.material, finish: input.finish, packaging: input.packaging, hex: input.hex.toUpperCase(), spools: input.spools, weightGrams: input.weightGrams, date: input.date, ...optional };
 }
 
 function findLibrary(database, userId) {
@@ -53,15 +57,26 @@ export async function handleLibrary(request, env) {
     if (!request.headers.get("content-type")?.startsWith("application/json")) return json({ error: "JSON required." }, 415);
     let input;
     try {
-      input = await boundedJson(request, 128000);
+      input = await boundedJson(request, 2000000);
       if (!Number.isSafeInteger(input.baseRevision) || input.baseRevision < 1 || typeof input.requestId !== "string" || !/^[a-zA-Z0-9-]{16,64}$/.test(input.requestId)) throw Error("Invalid library request.");
     } catch (error) { return json({ error: error.message }, 400); }
+    if (input.kind === "import" && input.expectedAccountKey !== userId) return json({ error: "The signed-in account changed. Reopen the importer before saving." }, 409);
     const row = await getLibrary(env.DB, userId);
     if (row.request_id === input.requestId) return json(libraryView(row, userId));
     if (row.revision !== input.baseRevision) return json({ error: "Your library changed elsewhere. Refresh the library, then try again; your form has been kept." }, 409);
     const data = JSON.parse(row.payload);
     try {
-      if (input.kind === "add" || input.kind === "edit") {
+      if (input.kind === "import") {
+        if (input.reviewed !== true || !Array.isArray(input.spools) || input.spools.length < 1 || input.spools.length > 500 || !/^[a-f0-9]{64}$/.test(input.sourceHash || "")) throw Error("Review 1–500 filament entries before importing.");
+        if ((data.importHashes || []).includes(input.sourceHash)) return json({ error: "This source was already imported. Check your library before adding it again." }, 409);
+        if (data.items.length + input.spools.length > 1000) throw Error("This import would exceed the 1000-entry library limit.");
+        const imported = input.spools.map((spool, index) => {
+          try { return validateSpool(spool); }
+          catch (error) { error.entryIndex = index; throw error; }
+        });
+        data.items.push(...imported.map((fields, index) => ({ ...fields, id: "spool-" + input.requestId + "-" + index, quantity: fields.spools, form: fields.packaging, sourceProduct: "", retailer: "Reviewed import", order: "", messageId: "", lineTotal: null, currency: "", used: false })));
+        data.importHashes = [...(data.importHashes || []), input.sourceHash];
+      } else if (input.kind === "add" || input.kind === "edit") {
         const fields = validateSpool(input.spool);
         if (input.kind === "add") {
           if (data.items.length >= 1000) throw Error("This library has reached its 1000-entry limit.");
@@ -79,7 +94,7 @@ export async function handleLibrary(request, env) {
           item.used = change.used;
         }
       } else throw Error("Unknown library action.");
-    } catch (error) { return json({ error: error.message }, 400); }
+    } catch (error) { return json({ error: error.message, ...(Number.isInteger(error.entryIndex) ? { entryIndex: error.entryIndex } : {}) }, 400); }
     const updatedAt = new Date().toISOString();
     const payload = JSON.stringify(data);
     const result = await env.DB.prepare("UPDATE libraries SET revision = revision + 1, payload = ?, request_id = ?, updated_at = ? WHERE user_id = ? AND revision = ?").bind(payload, input.requestId, updatedAt, userId, input.baseRevision).run();

@@ -78,7 +78,7 @@ test("offline navigation has a safe fallback; API, auth and writes never enter w
     listener({ request: { url: "https://test.example" + pathname, method, mode }, respondWith(response) { result = response; } });
     return result;
   };
-  for (const route of ["/api/phone-batch", "/signin-with-chatgpt", "/callback", "/signout-with-chatgpt"]) assert.equal(dispatch(route), undefined);
+  for (const route of ["/api/phone-batch", "/signin-with-chatgpt", "/callback", "/signout-with-chatgpt", "/sign-in", "/sign-out", "/app-release.json"]) assert.equal(dispatch(route), undefined);
   assert.equal(dispatch("/nfc.html", "POST"), undefined);
   assert.equal(dispatch("/nfc.html", "GET", "cors"), undefined);
   assert.equal(await (await dispatch("/nfc.html")).text(), "network response");
@@ -89,4 +89,48 @@ test("offline navigation has a safe fallback; API, auth and writes never enter w
   assert(!read("sw.js").includes("caches."));
   assert(!read("sw.js").includes("skipWaiting"));
   assert(!read("sw.js").includes("clients.claim"));
+});
+
+test("device update checks handle current, newer, pending and offline states without automatic reloads", async () => {
+  const nodes = new Map(["app-install", "install-app", "install-status", "app-mode", "app-origin", "app-version", "installed-status", "check-app-update", "update-status", "reload-app"].map(id => [id, { hidden: false, disabled: false, textContent: "" }]));
+  const events = {};
+  let latest = "aaaaaaaaaaaa", offline = false, reloads = 0, updates = 0;
+  const registration = { waiting: null, async update() { updates++; } };
+  const context = vm.createContext({
+    document: { getElementById: id => nodes.get(id), querySelector: () => ({ content: "aaaaaaaaaaaa" }) },
+    navigator: { serviceWorker: { register: async () => registration } },
+    window: {
+      isSecureContext: true, navigator: {}, location: { host: "spool-studio.uk", reload() { reloads++; } },
+      matchMedia: () => ({ matches: true, addEventListener() {} }),
+      addEventListener: (name, handler) => { events[name] = handler; },
+    },
+    fetch: async (url, options) => {
+      assert.equal(url, "/app-release.json");
+      assert.equal(options.cache, "no-store");
+      if (offline) throw Error("Offline");
+      return { ok: true, json: async () => ({ version: latest }) };
+    },
+  });
+  vm.runInContext(read("pwa.js"), context);
+  assert.equal(nodes.get("app-origin").textContent, "spool-studio.uk");
+  assert.match(nodes.get("app-mode").textContent, /installed app/);
+  assert(nodes.get("app-install").hidden);
+  await nodes.get("check-app-update").onclick();
+  assert.match(nodes.get("update-status").textContent, /latest app build/);
+  assert(nodes.get("reload-app").hidden);
+  latest = "bbbbbbbbbbbb";
+  registration.waiting = {};
+  await nodes.get("check-app-update").onclick();
+  assert.match(nodes.get("update-status").textContent, /newer build/);
+  assert.match(nodes.get("update-status").textContent, /close all/);
+  assert(!nodes.get("reload-app").hidden);
+  assert.equal(reloads, 0);
+  nodes.get("reload-app").onclick();
+  assert.equal(reloads, 1);
+  offline = true;
+  await nodes.get("check-app-update").onclick();
+  assert.match(nodes.get("update-status").textContent, /nothing has been changed/);
+  assert(!nodes.get("check-app-update").disabled);
+  assert(nodes.get("reload-app").hidden);
+  assert.equal(updates, 2);
 });

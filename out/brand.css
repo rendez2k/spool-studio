@@ -1,0 +1,6 @@
+.studio-brand{display:inline-flex;align-items:center;gap:10px;min-height:44px;color:var(--text,#202735);font:700 1rem/1.2 "Segoe UI",system-ui,sans-serif;text-decoration:none;min-width:0}
+.studio-brand img{display:block;width:36px;height:36px;flex:none;border-radius:9px}
+.studio-brand span{max-width:110px}
+.studio-brand:focus-visible{outline:3px solid var(--accent,#2856c7);outline-offset:4px}
+.sidebar>.studio-brand{margin:0 6px 24px}
+@media(max-width:800px){.sidebar>.studio-brand{margin:0}}

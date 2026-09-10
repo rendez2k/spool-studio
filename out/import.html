@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en-GB">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#2856c7"><title>Import filament · Spool Studio</title><link rel="icon" href="/icons/filament-32.png"><link rel="stylesheet" href="/import.css"><link rel="stylesheet" href="/brand.css"><meta name="theme-color" content="#2856c7"><meta name="apple-mobile-web-app-title" content="Spool Studio"><link rel="manifest" href="/app.webmanifest" crossorigin="use-credentials"><link rel="apple-touch-icon" sizes="180x180" href="/icons/filament-180.png"><script src="/pwa.js" defer></script></head>
+<body>
+<header><a class="studio-brand" href="/"><img src="/icons/filament.svg" width="36" height="36" alt=""><span>Spool Studio</span></a><a href="/">Back to library</a></header>
+<main>
+<h1>Import your filament</h1>
+<p class="intro">Paste an order confirmation or read a screenshot or spool label. Review the details, then add only what you own.</p>
+<p class="privacy">Text and images stay on this device. Only the fields you approve are saved to your private library. No email connection or AI subscription is needed.</p>
+<p class="hint"><strong>Best results:</strong> paste the product text, or crop a sharp image to its label. Keep quantities and finish visible. <a href="/guide.html#imports">Import tips &amp; example</a></p>
+<p id="account-status" role="status">Checking your account…</p>
+<div id="import-workspace" hidden class="workspace">
+<section class="source" aria-labelledby="source-heading">
+<h2 id="source-heading">1. Read your source</h2>
+<label for="source-csv">Filament CSV from ChatGPT or Excel</label>
+<input id="source-csv" type="file" accept=".csv,text/csv">
+<p class="hint">Import up to 500 entries per CSV (1 MB), then review 20 at a time. Use our headers and UTF-8 CSV, not .xlsx. Clear any current draft before loading a file. <a href="/email-import.html">Copy the email export prompt</a> · <a href="/filament-import-template.csv" download>Download blank CSV template</a></p>
+<label for="source-image">Screenshot or label photo</label>
+<input id="source-image" type="file" accept="image/jpeg,image/png,image/webp">
+<p class="hint">One JPG, PNG or WebP, up to 10 MB. English printed text works best. Crop to the product or label; the photo’s colour is not measured. For HEIC or PDF, take a screenshot first.</p>
+<img id="image-preview" hidden alt="Selected image for text recognition">
+<div class="actions"><button id="read-image" disabled>Read image text</button><button id="cancel-read" hidden>Cancel reading</button></div>
+<p id="ocr-status" role="status"></p>
+<label for="source-text">Order confirmation or recognised text</label>
+<label for="source-format">Text format</label><select id="source-format"><option value="text">Order / label text</option><option value="csv">Filament CSV</option></select>
+<textarea id="source-text" rows="12" maxlength="60000" placeholder="Example: SUNLU PLA Matte Orange 1 kg refill&#10;Quantity: 2"></textarea>
+<p class="hint">Edit recognition mistakes here. Separate product entries with a brand and material on each item’s first line.</p>
+<div class="actions"><button id="extract" class="primary">Find filament entries</button><button id="add-blank">Add a blank entry</button><button id="clear-import">Clear</button></div>
+</section>
+<section class="review" aria-labelledby="review-heading">
+<h2 id="review-heading" tabindex="-1">2. Review before adding</h2>
+<p id="review-status" role="status">Your detected entries will appear here. Nothing is saved automatically.</p>
+<nav id="review-pagination" class="review-pagination" aria-label="Review pages" hidden><button id="review-prev" type="button">Previous</button><label for="review-page">Page <select id="review-page"></select></label><button id="review-next" type="button">Next</button></nav>
+<form id="review-form">
+<div id="review-list"></div>
+<nav id="review-pagination-bottom" class="review-pagination" aria-label="Continue reviewing" hidden><button id="review-prev-bottom" type="button">Previous page</button><button id="review-next-bottom" type="button">Next page</button></nav>
+<div id="review-footer" hidden>
+<label class="check"><input id="approve-import" type="checkbox">I have checked the selected entries across all pages, quantities and estimated swatches.</label>
+<p class="hint">Possible duplicates start unselected. Select them only if they are additional stock. Blank count or weight stays unknown.</p>
+<button id="save-import" type="submit" class="primary" disabled>Add selected entries</button>
+</div>
+</form>
+</section>
+</div>
+<p id="import-message" role="status"></p>
+<footer><p class="privacy"><a href="/privacy.html">Privacy</a> · <a href="/contact.html">Contact</a></p></footer>
+</main>
+<script src="/import-parser.js"></script><script src="/import-csv.js"></script><script src="/import.js"></script>
+</body></html>

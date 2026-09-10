@@ -1,5 +1,7 @@
 dist/
 node_modules/
+out/vendor/ocr/
+out/vendor/barcode/
 .local/
 .openai/hosting.json
 .env
@@ -11,3 +13,5 @@ out/previews/
 .cursor/
 .claude/
 .grok/
+.netlify/
+.clerk/

@@ -1,0 +1,29 @@
+#label-panel { margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--line); }
+#label-panel [hidden] { display: none !important; }
+.label-heading { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+.label-heading h3 { margin: 0; font-size: 1.125rem; }
+.label-hint { color: var(--muted); font-size: .8125rem; max-width: 75ch; margin: 12px 0; }
+.label-workspace { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 32px; margin-top: 24px; }
+.label-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-bottom: 16px; }
+.label-fields label { display: grid; gap: 6px; font-size: .8125rem; }
+.label-fields input, .label-fields select { width: 100%; min-width: 0; }
+.label-preview-column { min-width: 0; }
+.label-preview-column h4 { margin: 0 0 12px; }
+.label-preview { overflow: auto; max-height: 340px; padding: 12px; background: var(--rail); border: 1px solid var(--line); border-radius: 8px; margin-bottom: 12px; }
+.label-preview-column .actions { justify-content: space-between; font-variant-numeric: tabular-nums; }
+#label-panel :focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+.spool-print-label { box-sizing: border-box; width: var(--label-width); height: var(--label-height); padding: 2mm; display: flex; flex-direction: column; justify-content: safe center; flex: none; gap: .4mm; background: white; color: black; font: 8pt/1.15 Arial, sans-serif; overflow-wrap: anywhere; break-inside: avoid; }
+.spool-print-label > * { flex: none; }
+.spool-print-label .label-position { font-size: 10pt; font-weight: 700; font-variant-numeric: tabular-nums; }
+.spool-print-label .label-colour { font-size: 11pt; line-height: 1.1; }
+.spool-print-label .label-stock:empty { display: none; }
+#spool-label-print { display: none; }
+#spool-label-print.label-measuring { display: block; position: fixed; left: -10000px; top: 0; visibility: hidden; }
+@media (max-width: 800px) { .label-workspace { grid-template-columns: minmax(0, 1fr); gap: 24px; } .label-preview-column { grid-row: 1; } }
+@media print {
+ body.printing-spool-labels { margin: 0 !important; padding: 0 !important; }
+ body.printing-spool-labels > :not(#spool-label-print) { display: none !important; }
+ body.printing-spool-labels #spool-label-print { display: block !important; margin: 0; padding: 0; }
+ #spool-label-print .spool-print-label { break-after: page; overflow: hidden; }
+ #spool-label-print .spool-print-label:last-child { break-after: auto; }
+}

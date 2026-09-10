@@ -22,8 +22,8 @@ export default {
       const html = new TextDecoder().decode(bytes).replace('<script id="dataset" type="application/json">{"status":"signedout","items":[]}</script>', '<script id="dataset" type="application/json">' + JSON.stringify(data).replaceAll("<", "\\u003c") + "</script>");
       return new Response(request.method === "HEAD" ? null : html, { status, headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff", "Referrer-Policy": "no-referrer" } });
     }
-    if (pathname === "/nfc.html" && !request.headers.get("oai-authenticated-user-id")) {
-      return new Response(null, { status: 302, headers: { Location: "/signin-with-chatgpt?return_to=%2Fnfc.html", "Cache-Control": "no-store" } });
+    if (["/nfc.html", "/import.html"].includes(pathname) && !request.headers.get("oai-authenticated-user-id")) {
+      return new Response(null, { status: 302, headers: { Location: "/signin-with-chatgpt?return_to=" + encodeURIComponent(pathname), "Cache-Control": "no-store" } });
     }
     return new Response(request.method === "HEAD" ? null : bytes, {
       headers: { "Content-Type": asset.type, "Cache-Control": "private, no-cache", "X-Content-Type-Options": "nosniff", "Referrer-Policy": "no-referrer" },

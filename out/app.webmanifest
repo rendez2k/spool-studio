@@ -17,6 +17,7 @@
   ],
   "shortcuts": [
     { "name": "Program filament", "url": "/nfc.html", "icons": [{ "src": "/icons/filament-192.png", "sizes": "192x192" }] },
-    { "name": "Filament library", "url": "/", "icons": [{ "src": "/icons/filament-192.png", "sizes": "192x192" }] }
+    { "name": "Filament library", "url": "/", "icons": [{ "src": "/icons/filament-192.png", "sizes": "192x192" }] },
+    { "name": "App & device", "url": "/app.html", "icons": [{ "src": "/icons/filament-192.png", "sizes": "192x192" }] }
   ]
 }

@@ -1,0 +1,19 @@
+On-device text recognition uses these unmodified third-party components:
+
+Tesseract.js 7.0.0
+https://github.com/naptha/tesseract.js
+License copied by the build to ocr/tesseract-LICENSE.txt.
+
+Tesseract.js-core (exact version pinned in package-lock.json)
+https://github.com/naptha/tesseract.js-core
+License copied by the build to ocr/core-LICENSE.txt.
+Only LSTM variants are included, including SIMD and relaxed-SIMD variants.
+
+English 4.0.0_best_int trained data, @tesseract.js-data/eng 1.0.0
+https://github.com/naptha/tessdata
+The upstream trained-data repository is Apache-2.0 licensed.
+Its license is retained in tessdata-LICENSE.txt.
+The npm packaging metadata additionally lists MIT.
+
+All recognition happens in the user's browser. No uploaded images or recognised
+text are sent to these projects or to third-party OCR services.

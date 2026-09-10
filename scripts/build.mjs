@@ -6,13 +6,25 @@ import { writeFile } from "node:fs/promises";
 
 const types = { ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8", ".png": "image/png", ".svg": "image/svg+xml", ".jpeg": "image/jpeg", ".jpg": "image/jpeg", ".webmanifest": "application/manifest+json; charset=utf-8" };
 const assets = {};
+const barcodeDirectory = "out/vendor/barcode";
+await mkdir(barcodeDirectory, { recursive: true });
+await build({ stdin: { contents: "import { BrowserMultiFormatOneDReader } from '@zxing/browser'; import { BarcodeFormat, DecodeHintType } from '@zxing/library'; export function createReader(){ return new BrowserMultiFormatOneDReader(new Map([[DecodeHintType.POSSIBLE_FORMATS,[BarcodeFormat.EAN_8,BarcodeFormat.EAN_13,BarcodeFormat.UPC_A,BarcodeFormat.CODE_128,BarcodeFormat.CODE_39,BarcodeFormat.ITF]]])); }", resolveDir: process.cwd() }, outfile: barcodeDirectory + "/decoder.js", bundle: true, format: "iife", globalName: "SpoolBarcodeDecoder", platform: "browser", target: "es2022", minify: true });
+for (const name of ["browser", "library"]) await cp("node_modules/@zxing/" + name + "/LICENSE", barcodeDirectory + "/" + name + "-LICENSE.txt");
+types['.csv'] = 'text/csv; charset=utf-8';
+const ocrDirectory = "out/vendor/ocr";
+await mkdir(ocrDirectory, { recursive: true });
+for (const name of ["tesseract.min.js", "worker.min.js"]) await cp("node_modules/tesseract.js/dist/" + name, ocrDirectory + "/" + name);
+for (const name of ["tesseract-core-lstm.wasm.js", "tesseract-core-simd-lstm.wasm.js", "tesseract-core-relaxedsimd-lstm.wasm.js"]) await cp("node_modules/tesseract.js-core/" + name, ocrDirectory + "/" + name);
+await cp("node_modules/@tesseract.js-data/eng/4.0.0_best_int/eng.traineddata.gz", ocrDirectory + "/eng.traineddata.gz");
+await cp("node_modules/tesseract.js/LICENSE.md", ocrDirectory + "/tesseract-LICENSE.txt");
+await cp("node_modules/tesseract.js-core/LICENSE", ocrDirectory + "/core-LICENSE.txt");
 async function collect(directory, prefix = "") {
   for (const entry of await readdir(directory, { withFileTypes: true })) {
     const file = path.join(directory, entry.name);
     const url = prefix + "/" + entry.name;
     if (url === "/previews") continue;
     if (entry.isDirectory()) await collect(file, url);
-    else assets[url] = { data: (await readFile(file)).toString("base64"), type: types[path.extname(file)] || "text/plain; charset=utf-8" };
+    else assets[url] = { data: (await readFile(file)).toString("base64"), type: types[path.extname(file)] || (url.endsWith(".gz") ? "application/octet-stream" : "text/plain; charset=utf-8") };
   }
 }
 const icon = await readFile("out/icons/filament.svg");

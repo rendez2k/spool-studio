@@ -5,13 +5,28 @@
     "build": "node scripts/build.mjs",
     "dev": "node scripts/dev.mjs",
     "db:generate": "drizzle-kit generate",
-    "pretest": "node scripts/build.mjs",
-    "test": "node --test tests/*.test.mjs"
+    "pretest": "node scripts/build-netlify.mjs",
+    "test": "node --test tests/*.test.mjs",
+    "build:netlify": "node scripts/build-netlify.mjs",
+    "dev:netlify": "npx netlify-cli dev",
+    "test:netlify": "node --test tests/netlify-*.test.mjs"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "0.2.17",
+    "@netlify/functions": "6.0.0",
     "@resvg/resvg-js": "2.6.2",
+    "@tesseract.js-data/eng": "1.0.0",
+    "@zxing/browser": "0.2.1",
+    "@zxing/library": "0.23.0",
     "drizzle-kit": "0.31.10",
     "drizzle-orm": "0.45.2",
-    "esbuild": "0.28.2"
+    "esbuild": "0.28.2",
+    "tesseract.js": "7.0.0"
+  },
+  "dependencies": {
+    "@clerk/backend": "3.17.2",
+    "@netlify/database": "2.0.1",
+    "cheerio": "^1.2.0",
+    "ipaddr.js": "^2.5.0"
   }
 }
