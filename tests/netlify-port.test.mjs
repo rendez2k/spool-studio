@@ -12,6 +12,7 @@ const spool = { brand: "Test", product: "Matte PLA", material: "PLA", finish: "m
 async function harness() {
   const postgres = new PGlite();
   await postgres.exec(await readFile("netlify/database/migrations/001_create-inventory/migration.sql", "utf8"));
+  await postgres.exec(await readFile("netlify/database/migrations/002_barcode-budget/migration.sql", "utf8"));
   const database = postgresDatabase({ async query(query, values) {
     const result = await postgres.query(query, values);
     return { rows: result.rows, rowCount: result.affectedRows };
@@ -64,6 +65,9 @@ test("new connections keep Gmail gated, bridge credentials isolated and QR redir
  const app=await harness();
  try{
   assert.equal((await app.run('/api/barcode-lookup',null,{code:'4002293401102',consent:true},{'oai-authenticated-user-id':'user_alice'})).status,401);
+  await app.postgres.query('INSERT INTO service_limits (name, revision, payload) VALUES ($1, 1, $2)', ['upcitemdb-trial',JSON.stringify([Date.now()])]);
+  const limited=await app.run('/api/barcode-lookup','alice',{code:'4002293401102',consent:true});
+  assert.equal(limited.status,429);assert.equal(limited.headers.get('netlify-cdn-cache-control'),'no-store');assert(Number(limited.headers.get('Retry-After'))>0);
   assert.equal((await app.run('/api/gmail-config',null)).status,401);
   assert.equal((await app.run('/api/account-export',null,null,{'oai-authenticated-user-id':'user_alice'})).status,401);
   assert.equal((await app.run('/api/account-data/erase',null,{confirmation:'ERASE MY SAVED DATA'},{'oai-authenticated-user-id':'user_alice'})).status,401);

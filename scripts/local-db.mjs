@@ -10,6 +10,7 @@ export function localDatabase(filename = ":memory:") {
     database.prepare("INSERT INTO local_migrations (name) VALUES (?)").run(name);
   }
   return {
+    async currentMilliseconds() { return Date.now(); },
     close() { database.close(); },
     prepare(sql) {
       return { bind(...values) {

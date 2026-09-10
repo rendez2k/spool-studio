@@ -56,7 +56,7 @@ For current paxx12 U1 firmware, prefer the built-in **SpoolLink** integration. O
 
 The explicit UPCitemdb button queries its free trial lookup endpoint with a validated EAN/UPC/GTIN. It sends the code, not account data. No photos, offers or tracking images are rendered. Only exact returned code identities become reviewable drafts. Manufacturer SKUs stay local. Results may be absent, incomplete or wrong; this is not universal coverage.
 
-The free provider has a shared allowance. Per-process pacing reduces bursts; provider limits are authoritative across serverless instances. A production-scale subscription, global rate limiter and provider licensing review are separate rollout work. No paid subscription or API key has been created.
+The free provider has a shared allowance. A database-backed, atomic reservation now enforces at least 15 seconds between attempts and at most 100 attempts in a rolling 24 hours across app instances. PostgreSQL supplies the clock. Failed provider calls count too; missing or invalid limiter state fails closed rather than bypassing the allowance. A 429 response provides Retry-After for app-imposed limits. Provider limits remain authoritative and may be exhausted independently. A production-scale subscription and provider licensing review remain operator work. No paid subscription or API key has been created.
 
 References: [API setup](https://www.upcitemdb.com/wp/docs/main/development/getting-started/), [plans](https://www.upcitemdb.com/wp/docs/main/development/plan/), [terms](https://devs.upcitemdb.com/termsofservice).
 
@@ -90,3 +90,8 @@ Operator confirmed by the owner: Robin Edwards, contact hello@productkit.digital
 Technical disclosure now includes physical spool/location/weight records, QR ownership, bridge credential handling, external barcode queries and the staged Gmail flow. The public notice remains marked draft: an assistant's technical review is not professional legal advice or a completed compliance review.
 
 Outstanding operator/legal decisions: lawful bases and supporting assessments, support/log/backup retention, processor contracts and international transfers, deletion of inventory alongside Clerk accounts, and Google's restricted-data policy requirements before general Gmail access.
+### Barcode allowance implementation
+
+`service_limits` contains one global `upcitemdb-trial` row: a revision and at most 100 numeric request timestamps. It contains no account IDs, codes, provider products or inventory. Optimistic revision updates reserve a slot before any external request; concurrent losers retry against the shared state and cannot spend the same slot. Old timestamps are removed on the next successful reservation, not by a background purge. The row therefore remains bounded when idle. It is deliberately separate from account erasure/export.
+
+The additive Netlify migration `002_barcode-budget` creates this table and revokes PUBLIC access; local SQLite development has its matching generated migration. Deploy migrations before serving the new handler. Missing migration or database failure returns 503 without calling the provider. Tests exercise two PostgreSQL adapters racing against the same database, rollover, protected endpoints, failed attempts and unavailable storage. No production barcode or user inventory is used in those tests.

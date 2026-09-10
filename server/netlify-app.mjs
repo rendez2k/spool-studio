@@ -74,7 +74,7 @@ export async function serveNetlify(request, { authenticate, database, readPage, 
         for (const cookie of state.headers.getSetCookie()) result.headers.append('Set-Cookie', cookie);
         return result;
       }
-      const result = url.pathname === "/api/library" ? await handleLibrary(authenticated, env) : url.pathname === "/api/phone-batch" ? await handleBatch(authenticated, env) : url.pathname === "/api/product-lookup" ? await handleProductLookup(authenticated) : url.pathname === "/api/barcode-lookup" ? await handleBarcodeLookup(authenticated) : response('{"error":"Not found."}', 404);
+      const result = url.pathname === "/api/library" ? await handleLibrary(authenticated, env) : url.pathname === "/api/phone-batch" ? await handleBatch(authenticated, env) : url.pathname === "/api/product-lookup" ? await handleProductLookup(authenticated) : url.pathname === "/api/barcode-lookup" ? await handleBarcodeLookup(authenticated, env) : response('{"error":"Not found."}', 404);
       result.headers.set("Netlify-CDN-Cache-Control", "no-store");
       for (const cookie of state.headers.getSetCookie()) result.headers.append("Set-Cookie", cookie);
       return result;

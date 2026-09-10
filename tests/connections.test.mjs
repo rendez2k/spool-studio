@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
 import {gtin,lookupBarcode,handleBarcodeLookup} from '../server/barcode-lookup.mjs';
 import {gmailConfig} from '../server/gmail-config.mjs';
+import {localDatabase} from '../scripts/local-db.mjs';
 const gmail=createRequire(import.meta.url)('../out/gmail-core.js');
 test('external barcode lookup validates check digits and rejects unrelated catalogue results',async()=>{
  assert.equal(gtin('4002293401102'),'4002293401102');
@@ -14,16 +15,17 @@ test('external barcode lookup validates check digits and rejects unrelated catal
  assert.deepEqual(result,[{title:'Example PLA',brand:'Example',colour:'White'}]);
  await assert.rejects(lookupBarcode('4002293401102',async()=>new Response('',{status:429})),/allowance/);
 });
-test('external barcode API requires sign-in, same origin and explicit consent before contacting provider',async()=>{
+test('external barcode API requires sign-in, same origin and explicit consent before contacting provider',async(context)=>{
+ const env={DB:localDatabase()};context.after(()=>env.DB.close());
  let called=0;const perform=async()=>{called++;return []};
  const make=(user,origin,consent)=>new Request('https://test.example/api/barcode-lookup',{method:'POST',headers:{...(user?{'oai-authenticated-user-id':user}:{}),origin,'Content-Type':'application/json'},body:JSON.stringify({code:'4002293401102',consent})});
- assert.equal((await handleBarcodeLookup(make(null,'https://test.example',true),perform)).status,401);
- assert.equal((await handleBarcodeLookup(make('user_alice','https://other.example',true),perform)).status,403);
- assert.equal((await handleBarcodeLookup(make('user_alice','https://test.example',false),perform)).status,400);
+ assert.equal((await handleBarcodeLookup(make(null,'https://test.example',true),env,perform)).status,401);
+ assert.equal((await handleBarcodeLookup(make('user_alice','https://other.example',true),env,perform)).status,403);
+ assert.equal((await handleBarcodeLookup(make('user_alice','https://test.example',false),env,perform)).status,400);
  assert.equal(called,0);
- const response=await handleBarcodeLookup(make('user_alice','https://test.example',true),perform);
+ const response=await handleBarcodeLookup(make('user_alice','https://test.example',true),env,perform);
  assert.equal(response.status,200);assert.equal((await response.json()).accountKey,'user_alice');assert.equal(called,1);
- assert.equal((await handleBarcodeLookup(make('user_alice','https://test.example',true),perform)).status,429);
+ assert.equal((await handleBarcodeLookup(make('user_alice','https://test.example',true),env,perform)).status,429);
 });
 test('Gmail configuration is disabled by default and separately gated by account or explicit public switch',()=>{
  const clientId='123456-test.apps.googleusercontent.com';

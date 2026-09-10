@@ -2,6 +2,12 @@ import {eraseSavedData} from './erase-data.mjs';
 import {communityRollsQuery} from './community-stats.mjs';
 export function postgresDatabase(client) {
   return {
+    async currentMilliseconds() {
+      const result = await client.query("SELECT floor(extract(epoch FROM clock_timestamp()) * 1000)::text AS milliseconds");
+      const value = result.rows[0]?.milliseconds;
+      if (typeof value !== 'string' || !/^\d+$/.test(value)) throw Error('Database clock unavailable.');
+      return Number(value);
+    },
     async communityRollCount() {
       const result = await client.query(communityRollsQuery);
       const value = result.rows[0]?.rolls;
@@ -13,7 +19,7 @@ export function postgresDatabase(client) {
       try {return await eraseSavedData(connection, input);} finally {connection.release();}
     },
     prepare(statement) {
-      if (!/^(SELECT|INSERT INTO|UPDATE) /.test(statement) || !/\b(libraries|phone_batches)\b/.test(statement)) throw Error("Unsupported inventory query.");
+      if (!/^(SELECT|INSERT INTO|UPDATE) /.test(statement) || !/\b(libraries|phone_batches|service_limits)\b/.test(statement)) throw Error("Unsupported inventory query.");
       let position = 0;
       const query = statement.replaceAll("?", () => "$" + ++position);
       return {

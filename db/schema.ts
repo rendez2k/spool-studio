@@ -15,3 +15,9 @@ export const libraries = sqliteTable("libraries", {
   requestId: text("request_id").notNull(),
   updatedAt: text("updated_at").notNull(),
 });
+
+export const serviceLimits = sqliteTable("service_limits", {
+  name: text("name").primaryKey(),
+  revision: integer("revision").notNull(),
+  payload: text("payload").notNull(),
+});

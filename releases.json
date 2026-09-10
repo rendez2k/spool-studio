@@ -1,5 +1,13 @@
 [
   {
+    "version": "1.4.1",
+    "date": "2026-09-10",
+    "title": "Shared barcode lookup protection",
+    "changes": [
+      "External barcode lookups now share a persistent allowance across server instances. Busy or exhausted lookups explain when to retry; manual entry and your own saved barcode matches remain available."
+    ]
+  },
+  {
     "version": "1.4.0",
     "date": "2026-09-10",
     "title": "Enrich costs, keep your place",
