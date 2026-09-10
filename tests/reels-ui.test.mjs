@@ -21,6 +21,14 @@ function harness(){
  return {node,context,events,id,get focused(){return focused},fail(){fail=true},pause(){pauseSave=new Promise(resolve=>{releaseSave=resolve})},release(){releaseSave()}};
 }
 const tick=()=>new Promise(resolve=>setImmediate(resolve));
+test('reel page aligns its shell and keeps help text and touch targets usable',()=>{
+ const css=readFileSync(new URL('../out/reels.css',import.meta.url),'utf8');
+ assert.match(css,/header, main, footer\s*\{[^}]*width: 100%;[^}]*max-width: 1100px/);
+ assert.match(css,/header\s*\{[^}]*flex-wrap: wrap/);
+ assert.match(css,/main > p, #reel-init-help\s*\{[^}]*max-width: 70ch/);
+ assert.match(css,/label:has\(input\[type=checkbox\]\)\s*\{[^}]*min-height: 44px/);
+ assert.match(css,/summary\s*\{[^}]*min-height: 44px/);
+});
 test('reel save feedback remains beside the form and does not move focus; errors preserve drafts',async()=>{
  const app=harness();await tick();app.node('reel-list').children[0].onclick();assert.equal(app.focused,'reel-title');
  app.node('reel-location').value='Dryer';app.node('reel-weight').value='620';app.node('reel-save').focus();

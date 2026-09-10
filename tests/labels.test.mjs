@@ -9,6 +9,7 @@ const snapshot={accountKey:'test-owner',uncounted:1,slots:[{position:1,shelf:1,s
 
 test('label presets use exact mm sizes and custom dimensions reject CSS injection and invalid bounds',()=>{
  assert.deepEqual(labels.dimensions('60x30'),[60,30]);
+ assert.deepEqual(labels.dimensions('76x50'),[76,50]);
  assert.deepEqual(labels.dimensions('4x6'),[101.6,152.4]);
  assert.deepEqual(labels.dimensions('custom','60.5','30'),[60.5,30]);
  for(const pair of [['NaN',30],['60; color:red',30],[39,30],[211,30],[60,24],[60,298],[Infinity,30],['',30]])assert.throws(()=>labels.dimensions('custom',...pair));
@@ -43,6 +44,7 @@ test('label UI is linked to available shelf slots, has isolated print CSS and no
  assert.match(html,/id="open-labels"/);assert.match(html,/displayed.filter\(row=>row.slotId&&!isUsed\(row\)\)/);
  for(const file of ['labels.css','labels-core.js','labels.js'])assert(html.includes('/'+file));
  assert.match(script,/child.textContent=text/);assert.match(script,/find\(overflow\)/);assert.match(script,/window.print\(\)/);
+ assert.match(script,/<option value="76x50">76 × 50 mm · MUNBYN<\/option>/);
  assert.match(script,/afterprint/);assert.match(script,/pagehide/);assert.doesNotMatch(script,/fetch\(|localStorage|sessionStorage|\.innerHTML\s*=.*row/);
  assert.match(css,/size|label-width/);assert.match(css,/body.printing-spool-labels > :not\(#spool-label-print\)/);assert.match(css,/break-after: page/);
  assert.match(read('guide.html'),/id="labels"/);
@@ -75,4 +77,7 @@ test('label interactions print paired copies, clear print staging, block stale s
  get('label-width').value='1';get('label-settings').input();assert.equal(get('label-print').disabled,true);assert.equal(get('label-width').disabled,false);
  get('label-size').value='60x30';get('label-settings').input();assert.equal(get('label-print').disabled,false);assert.equal(get('label-width').disabled,true);assert.equal(get('label-height').disabled,true);
  get('label-settings').onsubmit({preventDefault(){}});assert.equal(printCount,3);events.afterprint();
+ get('label-size').value='76x50';get('label-settings').input();get('label-settings').onsubmit({preventDefault(){}});
+ assert.equal(printCount,4);assert.match(head.children[0].textContent,/size: 76mm 50mm; margin: 0/);
+ assert.equal(body.children[0].children.length,4);events.afterprint();
 });

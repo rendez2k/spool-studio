@@ -1,6 +1,6 @@
 'use strict';
 (function(root){
- const presets=Object.freeze({'60x30':[60,30],'50x30':[50,30],'40x30':[40,30],'100x50':[100,50],'4x6':[101.6,152.4]});
+ const presets=Object.freeze({'60x30':[60,30],'50x30':[50,30],'40x30':[40,30],'76x50':[76,50],'100x50':[100,50],'4x6':[101.6,152.4]});
  function dimensions(preset,width,height){
   const values=presets[preset]||[Number(width),Number(height)];
   if(!values.every(Number.isFinite)||values[0]<40||values[0]>210||values[1]<25||values[1]>297)throw Error('Use a width of 40–210 mm and a height of 25–297 mm.');
