@@ -1,5 +1,14 @@
 [
   {
+    "version": "1.9.8",
+    "date": "2026-09-11",
+    "title": "Bring your Strata project straight into matching",
+    "changes": [
+      "Spool Studio can receive a complete 3MF directly from the supported Strata handoff, including saved thumbnails and native mixing data, without uploading the model or replacing existing comparisons.",
+      "The transfer shows progress and offers cancellation, with a manual file-import fallback. Review and choose your filaments as usual; receiving a project does not change stock, sync to your phone automatically or send anything to a printer."
+    ]
+  },
+  {
     "version": "1.9.7",
     "date": "2026-09-11",
     "title": "Quick finish matching",
