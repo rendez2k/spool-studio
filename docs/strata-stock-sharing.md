@@ -33,3 +33,5 @@ A library revision change since the review refreshes the local preview and requi
 ## Validation
 
 Eleven focused stock tests cover field whitelisting, aggregation/reel availability, origin/source/token/type validation, no data before explicit Share, duplicates, revision reconfirmation, account changes, cancellation/timeouts, empty inventory and payload bounds. The full suite passes 230 tests. Local two-tab browser checks cover desktop/mobile in both themes, no non-GET requests, metadata-only payloads, cancel and changed-stock reconfirmation. The read-only fixture at port 18769 contains twelve synthetic PLA options and 39 available rolls; it is not a production service.
+
+Actual Strata v1.129.0 requester integration also passes: three PLA options selected from this popup's snapshot, no model palette mutation before Apply, explicit apply/lock, Undo restoration, lock preservation through Shuffle, selection retained during search, and snapshot-only clearing. Desktop/mobile layouts and the existing forward 3MF/thumbnail transfer regression pass. All integration stock is synthetic; no real inventory or printer changes were made.
