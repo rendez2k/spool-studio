@@ -1,5 +1,15 @@
 [
   {
+    "version": "1.9.9",
+    "date": "2026-09-11",
+    "title": "Choose Strata colours from your available filament",
+    "changes": [
+      "Review and share a one-time snapshot of your available filament colours with Strata, then choose your model palette there.",
+      "Sharing includes swatches, brand, product, shade, material, finish and available roll counts only. Prices, purchases, emails, stock IDs and account credentials stay private.",
+      "Nothing is shared until you approve. Used-up and unknown-count entries are excluded, and your stock is never changed or reserved."
+    ]
+  },
+  {
     "version": "1.9.8",
     "date": "2026-09-11",
     "title": "Bring your Strata project straight into matching",
