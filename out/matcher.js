@@ -154,6 +154,15 @@ const FilamentMatcher=(()=>{
   const close=same.filter(candidate=>candidate.distance!==null&&candidate.distance<=15);
   return {same,alternatives,exact,close,status:exact.length?'Exact in stock':close.length?'Close option in stock':same.length?'No close colour match':'No matching material / finish'};
  }
- return {readProject,parseSettings,finish,material,distance,deltaE2000,matches,validHex,MAX_FILE};
+ function setUnknownFinishes(slots,value){
+  if(!['standard','matte','silk','marble','sparkle','wood','glow','satin','metal'].includes(value))throw Error('Choose a known finish.');
+  let changed=0;
+  for(const slot of slots){
+   if(!slot.included||(slot.finish&&slot.finish!=='unknown'))continue;
+   slot.finish=value;slot.nfcChoice=null;changed++;
+  }
+  return changed;
+ }
+ return {readProject,parseSettings,finish,material,distance,deltaE2000,matches,validHex,MAX_FILE,setUnknownFinishes};
 })();
 if(typeof module!=='undefined'&&module.exports)module.exports=FilamentMatcher;

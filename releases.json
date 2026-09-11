@@ -1,5 +1,14 @@
 [
   {
+    "version": "1.9.7",
+    "date": "2026-09-11",
+    "title": "Quick finish matching",
+    "changes": [
+      "Match a print now offers Match unknown finishes: choose Standard / basic, Matte or another finish and apply it to selected colours missing a finish in the current model. Known finishes and library entries stay unchanged.",
+      "Each model colour has a visible Requested finish selector without opening More options. Matches refresh immediately; changing a finish clears that colour's chosen filament so it can be reviewed again."
+    ]
+  },
+  {
     "version": "1.9.6",
     "date": "2026-09-11",
     "title": "Spool or refill, clearly labelled",
