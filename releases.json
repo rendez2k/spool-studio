@@ -1,5 +1,14 @@
 [
   {
+    "version": "1.9.6",
+    "date": "2026-09-11",
+    "title": "Spool or refill, clearly labelled",
+    "changes": [
+      "Labels now show a separate With spool, Refill — no spool or Spool not stated line, enabled by default and independently adjustable under Label details.",
+      "Older imports use the same packaging interpretation as the library cards instead of silently losing that detail on labels. This describes purchased packaging, not whether a refill has since been mounted."
+    ]
+  },
+  {
     "version": "1.9.5",
     "date": "2026-09-11",
     "title": "Permanent IDs without leaving labels",

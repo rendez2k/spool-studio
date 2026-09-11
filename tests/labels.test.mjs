@@ -72,7 +72,7 @@ test('label interactions print paired copies, clear print staging, block stale s
  const body=element(),head=element();
  get('label-panel').hidden=true;get('label-size').value='60x30';get('label-copies').value='2';
  get('label-location').value='shelf';get('label-qr-style').value='square';get('label-qr').checked=false;
- for(const id of ['label-show-brand','label-show-material','label-show-stock'])get(id).checked=true;
+ for(const id of ['label-show-brand','label-show-material','label-show-stock','label-show-packaging'])get(id).checked=true;
  const context={document:{getElementById:get,createElement:element,body,head},window:{getShelfLabelSnapshot:()=>current,print:()=>{printCount++},addEventListener:(name,handler)=>{events[name]=handler}},structuredClone,SpoolLabels:labels,MutationObserver:class{constructor(handler){observe=handler}observe(){}}};
  vm.runInNewContext(readFileSync(new URL('../out/labels.js',import.meta.url),'utf8'),context);
  get('open-labels').onclick();assert.equal(get('label-panel').hidden,false);assert.equal(get('label-print').disabled,false);
@@ -111,6 +111,16 @@ test('label interactions print paired copies, clear print staging, block stale s
  assert(preview.children.every(child=>child.className!=='label-shelf'));
  assert(preview.children.some(child=>child.className==='label-brand'));
  assert(preview.children.some(child=>child.className==='label-stock'));
+ assert.equal(preview.children.find(child=>child.className==='label-packaging').textContent,'Refill — no spool');
+ for(const [packaging,text] of [['spooled','With spool'],['unknown','Spool not stated'],[undefined,'Spool not stated']]){
+  selected={...selected,slots:[{...selected.slots[0],packaging}]};context.window.openSelectedLabels();
+  assert.equal(get('label-preview').children[0].children.find(child=>child.className==='label-packaging').textContent,text);
+ }
+ get('label-show-stock').checked=false;get('label-settings').input();
+ assert(get('label-preview').children[0].children.some(child=>child.className==='label-packaging'));
+ get('label-show-packaging').checked=false;get('label-settings').input();
+ assert(get('label-preview').children[0].children.every(child=>child.className!=='label-packaging'));
+ get('label-show-packaging').checked=true;
  get('label-location').value='custom';get('label-location-text').value='';get('label-settings').input();
  assert.equal(get('label-print').disabled,true);assert.match(get('label-status').textContent,/Enter a location/);
  get('label-location-text').value='<b>Dry box A</b>';get('label-show-brand').checked=false;get('label-show-stock').checked=false;get('label-settings').input();

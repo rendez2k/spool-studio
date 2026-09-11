@@ -1,5 +1,7 @@
 # Collection sorting and batch actions
 
+Label details includes a separate **With spool / refill** option, enabled by default independently of weight. Labels show With spool, Refill — no spool, or Spool not stated. Shelf and selected-entry labels use the same packaging interpretation as library cards, including legacy source text when no explicit value was saved. An explicitly saved unknown value is respected. This describes purchased packaging, not a refill's current mounting status; no inventory data is changed by rendering or printing.
+
 Collection and List offer **Sort by**: purchase date or added/imported date, newest or oldest first. Default order preserves the original view. Grouped cards use the latest member date for newest-first and the earliest for oldest-first. Their date caption identifies which one is shown. Missing dates stay last; historic import dates were not recorded and are not inferred from purchase dates. Newly added and reviewed-import entries receive a server timestamp that edits do not reset.
 
 Choose **Select entries**, tick cards or list entries, then **Bulk edit** or **Print selected labels**. Grouped cards select all their underlying purchase entries, including entries beyond the current page. **Select all results** selects all filtered results, not just this page. Filter changes discard selections that no longer match; changing to Colour shelf or Match a print clears the selection. Selection is temporary and does not sync to other devices.

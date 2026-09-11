@@ -20,6 +20,7 @@
 .spool-print-label .label-colour { font-size: 1.45em; line-height: 1.1; }
 .spool-print-label .label-stock:empty { display: none; }
 .spool-print-label .label-stock { font-size:max(8pt,.85em); }
+.spool-print-label .label-packaging { font-size:max(8pt,.85em); font-weight:600; }
 .label-qr-toggle { display: flex; align-items: center; gap: 8px; font-size: .8125rem; min-height: 44px; cursor: pointer; }
 .label-qr-toggle input[type=checkbox] { flex: 0 0 18px; width: 18px; height: 18px; min-height: 0; padding: 0; margin: 0; accent-color: var(--accent); }
 .spool-print-label.has-reel-qr { position: relative; padding-right: calc(var(--label-code-size,20mm) + 3mm); }

@@ -48,6 +48,10 @@ test("new user can add, edit, mark used and undo without inheriting local owner 
     assert.equal(run("items[0].spools"), 4);
     assert.equal(run("items[0].finish"), "matte");
     assert.equal(run("items[0].packaging"), "refill");
+    assert.equal(run("arrangeShelf([{...items[0],packaging:undefined,sourceProduct:'PLA filament with spool',notes:''}])[0].packaging"),'spooled');
+    assert.equal(run("arrangeShelf([{...items[0],packaging:undefined,sourceProduct:'PLA Refill',notes:''}])[0].packaging"),'refill');
+    assert.equal(run("arrangeShelf([{...items[0],packaging:undefined,sourceProduct:'PLA',notes:''}])[0].packaging"),'unknown');
+    assert.equal(run("arrangeShelf([{...items[0],packaging:'unknown',sourceProduct:'PLA Refill',notes:''}])[0].packaging"),'unknown');
     assert.equal(get("spool-dialog").open, false);
     await run("markUsage(items[0].id)");
     assert.equal(run("isUsed(items[0])"), true);

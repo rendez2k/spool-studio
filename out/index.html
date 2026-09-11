@@ -234,7 +234,7 @@ function arrangeShelf(rows){
   }
   return colourOrder||left.colour.localeCompare(right.colour)||left.brand.localeCompare(right.brand)||left.product.localeCompare(right.product)||left.id.localeCompare(right.id);
  });
- const slots=ordered.flatMap(row=>{const reels=row.reels?.filter(reel=>!reel.used);return Array.from({length:row.spools},(_,rollIndex)=>({...row,spools:1,slotId:reels?.[rollIndex]?.id||row.id+':'+rollIndex,reelId:reels?.[rollIndex]?.id,reelNumber:reels?.[rollIndex]?.number,reelLocation:reels?.[rollIndex]?.location||'',sourceSpools:row.spools,rollInPurchase:rollIndex+1,separate:shelfColourKey(row).separate}))});
+ const slots=ordered.flatMap(row=>{const reels=row.reels?.filter(reel=>!reel.used);return Array.from({length:row.spools},(_,rollIndex)=>({...row,packaging:packaging(row),spools:1,slotId:reels?.[rollIndex]?.id||row.id+':'+rollIndex,reelId:reels?.[rollIndex]?.id,reelNumber:reels?.[rollIndex]?.number,reelLocation:reels?.[rollIndex]?.location||'',sourceSpools:row.spools,rollInPurchase:rollIndex+1,separate:shelfColourKey(row).separate}))});
  return slots.map((row,index)=>({...row,position:index+1,shelf:Math.floor(index/shelfSize)+1,shelfSlot:index%shelfSize+1})).concat(rows.filter(row=>!Number.isInteger(row.spools)||row.spools<=0).map(row=>({...row,position:'',shelf:'',shelfSlot:''})));
 }
 function getShelfLabelSnapshot(){return {accountKey:dataset.accountKey||'',slots:mode==='shelf'&&dataset.status==='complete'?displayed.filter(row=>row.slotId&&!isUsed(row)):[],uncounted:mode==='shelf'?displayed.filter(row=>!row.slotId).length:0}}
