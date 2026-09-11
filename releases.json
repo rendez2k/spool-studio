@@ -1,5 +1,14 @@
 [
   {
+    "version": "1.9.5",
+    "date": "2026-09-11",
+    "title": "Permanent IDs without leaving labels",
+    "changes": [
+      "Missing QR spool IDs? Assign permanent IDs directly beside the label warning. The action applies to all counted rolls in your library without changing quantities or used marks.",
+      "Your label size, copies and selection remain in place, and QR previews refresh after assignment. Printing still requires your own Print labels click."
+    ]
+  },
+  {
     "version": "1.9.4",
     "date": "2026-09-11",
     "title": "Add filament straight from your phone",

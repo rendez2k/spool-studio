@@ -57,6 +57,11 @@ test("new user can add, edit, mark used and undo without inheriting local owner 
     get("spool-count").value = "3";
     await get("spool-form").onsubmit({ preventDefault() {} });
     assert.equal(run("items[0].spools"), 3);
+    await assert.rejects(()=>run("window.assignPermanentLabelIds({accountKey:dataset.accountKey,revision:-1})"),/library changed/);
+    await run("window.assignPermanentLabelIds({accountKey:dataset.accountKey,revision:dataset.revision})");
+    assert.equal(run("dataset.reels.length"),3);
+    assert.equal(run("items[0].spools"),3);
+    assert.equal(run("dataset.reels.every(reel=>reel.remainingGrams===null&&!reel.used)"),true);
     run("matchProjects=[{name:'Private model',slots:[],previews:[]}];matchSyncEnabled=true");
     actor = "another-user";
     await run("refreshLibrary()");

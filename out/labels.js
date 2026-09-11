@@ -2,7 +2,7 @@
 {
  const node=id=>document.getElementById(id);
  const panel=node('label-panel'),trigger=node('open-labels');
- let snapshot=null,planned=[],previewIndex=0,selectionSource=false;
+ let snapshot=null,planned=[],previewIndex=0,selectionSource=false,assigning=false;
  const sourceSnapshot=()=>selectionSource?window.getSelectedLabelSnapshot():window.getShelfLabelSnapshot();
  panel.innerHTML=`<div class="label-heading"><h3 id="label-heading" tabindex="-1">Labels for your shelf</h3><button id="close-labels" type="button">Close labels</button></div>
  <p class="label-hint">Print matching labels for each spool and its box. SP numbers stay with the reel; shelf positions can change. <a href="/reels.html">Assign permanent IDs or manage individual spools</a> before printing QR labels.</p>
@@ -16,7 +16,7 @@
  <div id="label-custom-location" class="label-fields" hidden><label>Location for this batch<input id="label-location-text" maxlength="60" placeholder="e.g. Dry box A"></label></div>
  <details class="label-content"><summary>Label details</summary><div class="label-content-options"><label class="label-qr-toggle"><input id="label-show-brand" type="checkbox" checked> Brand</label><label class="label-qr-toggle"><input id="label-show-material" type="checkbox" checked> Material &amp; finish</label><label class="label-qr-toggle"><input id="label-show-stock" type="checkbox" checked> Weight &amp; packaging</label></div><p class="label-hint">Colour and spool number always stay visible. Custom locations apply to these labels only; they do not change your library.</p></details>
  <p class="label-print-settings"><strong id="label-paper-size"></strong><span>Margins: None · Scale: 100% · Headers and footers: Off</span><span>Match the loaded labels. A larger driver paper size leaves empty space; the app cannot change these printer settings.</span></p>
- <p id="label-status" class="label-hint" role="status"></p><div class="actions"><button id="label-print" class="primary" type="submit">Print labels</button><button id="label-refresh" type="button">Use current shelf</button></div>
+ <p id="label-status" class="label-hint" role="status"></p><div id="label-id-action" hidden><button id="label-assign-ids" type="button" aria-describedby="label-id-help">Assign permanent IDs to my rolls</button><p id="label-id-help" class="label-hint">Applies to all counted rolls in your library, not just this selection. Quantities and used marks stay unchanged. Your label settings stay here; QR previews refresh automatically.</p></div><div class="actions"><button id="label-print" class="primary" type="submit">Print labels</button><button id="label-refresh" type="button">Use current shelf</button></div>
  <p class="label-hint">Choose the same paper size in your printer settings, 100% / actual size, no margins, and headers and footers off. Test one position first. MUNBYN uses your usual printer driver or print service—not a direct Bluetooth connection from this page. <a href="/guide.html#labels">Printing help</a></p>
  </form><div class="label-preview-column"><h4>Label preview</h4><div id="label-preview" class="label-preview"></div><div class="actions"><button id="label-prev" type="button" aria-label="Previous label preview">Previous</button><span id="label-page"></span><button id="label-next" type="button" aria-label="Next label preview">Next</button></div><p class="label-hint">Black text for thermal printing. Screen size may differ from the actual label.</p></div></div>`;
  const printRoot=document.createElement('div');printRoot.id='spool-label-print';printRoot.hidden=true;document.body.append(printRoot);
@@ -52,6 +52,9 @@
   element.style.setProperty('--label-font',size+'pt');
  }
  function render(){
+  node('label-assign-ids').disabled=assigning;
+  if(assigning){node('label-print').disabled=true;node('label-status').textContent='Assigning permanent IDs…';return}
+  node('label-id-action').hidden=true;
   node('label-custom').hidden=node('label-size').value!=='custom';
   node('label-qr-style').disabled=!node('label-qr').checked;
   node('label-custom-location').hidden=node('label-location').value!=='custom';
@@ -67,7 +70,7 @@
    previewIndex=Math.min(previewIndex,planned.length-1);const preview=label(planned[previewIndex]);node('label-preview').append(preview);fitLabel(preview);
    node('label-page').textContent=(previewIndex+1)+' / '+planned.length;node('label-prev').disabled=previewIndex===0;node('label-next').disabled=previewIndex===planned.length-1;
    const missing=planned.filter(row=>!row.reelId).length/options.copies;
-   if(node('label-qr').checked&&missing)throw Error(missing+' roll'+(missing===1?' has':'s have')+' no permanent ID. Assign permanent IDs and refresh the library, or untick QR links to print text-only labels.');
+   if(node('label-qr').checked&&missing){node('label-id-action').hidden=false;throw Error(missing+' roll'+(missing===1?' has':'s have')+' no permanent ID. Assign IDs below, or untick QR links to print text-only labels.')}
    node('label-status').textContent=planned.length+' labels · '+(options.end-options.start+1)+' rolls · '+options.width+' × '+options.height+' mm.'+(missing?' Position numbers are not permanent spool IDs.':node('label-qr').checked?' QR links require the owner to sign in.':' Text-only labels.')+(node('label-location').value==='saved'&&planned.some(row=>!row.reelLocation)?' Reels without a saved location leave it blank.':'')+(node('label-qr').checked&&node('label-qr-style').value==='rounded'?' Test a printed Soft corners code on your phone before a full batch.':'')+(snapshot.uncounted?' '+snapshot.uncounted+' uncounted bundle'+(snapshot.uncounted===1?'':'s')+' excluded.':'');
    node('label-print').disabled=false;
   }catch(error){node('label-status').textContent=error.message}
@@ -87,6 +90,21 @@
  window.openSelectedLabels=()=>{selectionSource=true;panel.hidden=false;trigger.setAttribute('aria-expanded','true');current();node('label-heading').focus()};
  node('close-labels').onclick=()=>{panel.hidden=true;trigger.setAttribute('aria-expanded','false');(selectionSource?node('collection-labels'):trigger).focus()};
  node('label-refresh').onclick=current;
+ node('label-assign-ids').onclick=async()=>{
+  if(assigning||node('label-id-action').hidden)return;
+  if(stale()){render();return}
+  const expected={accountKey:snapshot.accountKey,revision:snapshot.revision};
+  assigning=true;render();
+  let failure='';
+  try{
+   if(!window.assignPermanentLabelIds)throw Error('Reload the app before assigning IDs.');
+   await window.assignPermanentLabelIds(expected);
+   const latest=sourceSnapshot();
+   if(latest.accountKey!==expected.accountKey)throw Error('The signed-in account changed. Refresh your label selection.');
+   snapshot=structuredClone(latest);
+  }catch(error){failure=error.message||'Could not assign IDs. Try again.'}
+  finally{assigning=false;render();if(failure)node('label-status').textContent=failure;else if(!node('label-print').disabled){node('label-status').textContent='Permanent IDs assigned. '+node('label-status').textContent;node('label-print').focus()}}
+ };
  node('label-settings').addEventListener('input',()=>{previewIndex=0;render()});
  node('label-prev').onclick=()=>{previewIndex--;render()};node('label-next').onclick=()=>{previewIndex++;render()};
  function cleanup(){printRoot.replaceChildren();printRoot.hidden=true;printRoot.classList.remove('label-measuring');document.body.classList.remove('printing-spool-labels');pageStyle.textContent=''}

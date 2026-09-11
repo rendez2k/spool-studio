@@ -112,6 +112,10 @@ $('spool-form').onsubmit=async event=>{
  if(await saveLibraryAction({kind:editingSpoolId?'edit':'add',id:editingSpoolId,spool})){$('spool-dialog').close();if(!editingSpoolId)reset()}
 };
 $('refresh-library').onclick=refreshLibrary;
+window.assignPermanentLabelIds=async expected=>{
+ if(libraryBusy||dataset.status!=='complete'||!expected.accountKey||expected.accountKey!==dataset.accountKey||expected.revision!==dataset.revision)throw Error('The library changed or is busy. Refresh your label selection before assigning IDs.');
+ if(!await saveLibraryAction({kind:'initialise-reels',expectedAccountKey:expected.accountKey}))throw Error($('library-status').textContent||'Could not assign IDs. Try again.');
+};
 window.addEventListener('focus',refreshLibrary);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshLibrary()});
 libraryControls();

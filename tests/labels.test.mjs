@@ -47,7 +47,7 @@ test('snapshot comparison notices account, order, stock and metadata changes',()
  assert.equal(labels.signature(snapshot),labels.signature(structuredClone(snapshot)));
 });
 
-test('label UI is linked to available shelf slots, has isolated print CSS and no storage or inventory writes',()=>{
+test('label UI is linked to available shelf slots, isolates print CSS and delegates explicit ID assignment',()=>{
  const read=file=>readFileSync(new URL('../out/'+file,import.meta.url),'utf8');
  const html=read('index.html'),script=read('labels.js'),css=read('labels.css');
  assert.match(html,/id="open-labels"/);assert.match(html,/displayed.filter\(row=>row.slotId&&!isUsed\(row\)\)/);
@@ -59,7 +59,7 @@ test('label UI is linked to available shelf slots, has isolated print CSS and no
  assert.match(read('guide.html'),/id="labels"/);
 });
 
-test('label interactions print paired copies, clear print staging, block stale stock and reject overflow',()=>{
+test('label interactions print paired copies, clear print staging, block stale stock and reject overflow',async()=>{
  let current=structuredClone(snapshot),overflowing=false,printCount=0,observe;
  const elements=new Map(),events={};
  function element(){
@@ -103,8 +103,10 @@ test('label interactions print paired copies, clear print staging, block stale s
  selected={...current,slots:[{...current.slots[0],position:17,shelf:3,shelfSlot:1}]};context.window.openSelectedLabels();
  get('label-qr').checked=true;get('label-settings').input();
  assert.equal(get('label-print').disabled,true);assert.match(get('label-status').textContent,/no permanent ID/);
+ assert.equal(get('label-id-action').hidden,false);
  get('label-settings').onsubmit({preventDefault(){}});assert.equal(printCount,4);
  get('label-qr').checked=false;get('label-location').value='none';get('label-settings').input();
+ assert.equal(get('label-id-action').hidden,true);
  let preview=get('label-preview').children[0];
  assert(preview.children.every(child=>child.className!=='label-shelf'));
  assert(preview.children.some(child=>child.className==='label-brand'));
@@ -132,4 +134,15 @@ test('label interactions print paired copies, clear print staging, block stale s
  events.afterprint();
  get('label-size').value='40x30';get('label-settings').input();assert.equal(get('label-print').disabled,true);
  get('label-qr').checked=false;get('label-settings').input();assert.equal(get('label-print').disabled,false);
+ get('label-size').value='76x50';get('label-qr').checked=true;
+ selected={...selected,slots:selected.slots.map(row=>({...row,reelId:null,reelNumber:null}))};context.window.openSelectedLabels();
+ context.window.assignPermanentLabelIds=async()=>{throw Error('Please retry')};
+ await get('label-assign-ids').onclick();assert.equal(get('label-status').textContent,'Please retry');assert.equal(get('label-assign-ids').disabled,false);
+ let complete,calls=0;
+ context.window.assignPermanentLabelIds=expected=>{calls++;assert.equal(expected.accountKey,selected.accountKey);return new Promise(resolve=>{complete=()=>{selected={...selected,revision:selected.revision+1,slots:selected.slots.map(row=>({...row,reelId:'11111111-1111-4111-8111-111111111111',reelNumber:8}))};resolve()}})};
+ const assigning=get('label-assign-ids').onclick();assert.equal(get('label-assign-ids').disabled,true);assert.equal(get('label-print').disabled,true);
+ await get('label-assign-ids').onclick();assert.equal(calls,1);complete();await assigning;
+ assert.equal(get('label-id-action').hidden,true);assert.equal(get('label-print').disabled,false);assert.equal(printCount,5);
+ assert.equal(get('label-size').value,'76x50');assert.equal(get('label-copies').value,'2');assert.equal(get('label-qr-style').value,'rounded');
+ assert.match(get('label-status').textContent,/Permanent IDs assigned/);assert.equal(get('label-preview').children[0].children[0].textContent,'SP-00008');
 });
