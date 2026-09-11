@@ -1,6 +1,8 @@
 'use strict';
 {
  const icons={
+  add:'<path d="M12 5v14M5 12h14"/>',
+  barcode:'<path d="M4 7V4h4m8 0h4v3M4 17v3h4m8 0h4v-3M7 8v8m3-8v8m4-8v8m3-8v8"/>',
   library:'<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>',
   import:'<path d="M12 3v12m-4-4 4 4 4-4M4 15v5h16v-5"/>',
   reels:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/><path d="m5.5 5.5 4.3 4.3m4.4 4.4 4.3 4.3m0-13-4.3 4.3m-4.4 4.4-4.3 4.3"/>',
@@ -48,7 +50,7 @@
   toggle.onclick=()=>{const dark=!document.body.classList.contains('dark');theme(dark);try{localStorage.setItem('filament-theme',dark?'dark':'light')}catch{}};
   bottom.append(toggle);rail.append(bottom);document.body.prepend(rail);
  }
- const mobile=navigation([paths[0],paths[2],paths[5],paths[8]],'studio-mobile-nav','Quick navigation');
+ const mobile=navigation([paths[0],['add','Add spools','/?add=manual'],['barcode','Scan barcode','/?add=barcode'],['nfc','NFC tags','/nfc.html']],'studio-mobile-nav','Quick navigation');
  const menu=document.createElement('dialog');menu.className='studio-menu';menu.setAttribute('aria-label','Workspaces and settings');
  const close=document.createElement('button');close.type='button';close.textContent='Close navigation';close.onclick=()=>menu.close();
  const mobileTheme=document.createElement('button');mobileTheme.type='button';mobileTheme.textContent='Switch colour theme';mobileTheme.onclick=()=>document.querySelector('.sidebar-bottom button,.studio-rail-bottom button')?.click();

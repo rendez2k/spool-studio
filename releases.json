@@ -1,5 +1,15 @@
 [
   {
+    "version": "1.9.4",
+    "date": "2026-09-11",
+    "title": "Add filament straight from your phone",
+    "changes": [
+      "Mobile navigation now puts Add spools and Scan barcode alongside your library and NFC tags. The NFC landing page has a prominent shortcut for adding new filament.",
+      "Barcode shortcuts open Add spools with the barcode method selected and the camera button ready. Camera access still requires your tap, and every new spool needs review before saving.",
+      "Supported home-screen app menus include Scan barcode and Add spools shortcuts. Manual entry remains available when a code cannot be identified."
+    ]
+  },
+  {
     "version": "1.9.3",
     "date": "2026-09-10",
     "title": "Windows startup switch fixed",

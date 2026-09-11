@@ -39,5 +39,5 @@ test("one spool identity and manifest cover the app and sign-in; release matches
   const page = await readFile("dist/netlify-pages/app.html", "utf8");
   assert(page.includes('name="app-release" content="' + release.version + '"'));
   const manifest = JSON.parse(await readFile("dist/netlify-public/app.webmanifest", "utf8"));
-  assert(manifest.shortcuts.some(shortcut => shortcut.url === "/app.html"));
+  for (const route of ["/?add=barcode", "/?add=manual", "/nfc.html", "/"]) assert(manifest.shortcuts.some(shortcut => shortcut.url === route));
 });

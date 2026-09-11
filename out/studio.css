@@ -1,4 +1,11 @@
 @media screen {
+ .studio-ui .mobile-stock-entry { margin:18px 0; padding:16px; border:1px solid var(--line); border-radius:12px; background:var(--surface); }
+ .studio-ui .mobile-stock-entry h2 { margin:0; font-size:16px; }
+ .studio-ui .mobile-stock-entry p { margin:5px 0 14px; color:var(--muted); font-size:13px; }
+ .mobile-stock-actions { display:flex; flex-wrap:wrap; align-items:center; gap:10px 18px; }
+ .studio-ui .mobile-stock-actions a { display:inline-flex; align-items:center; justify-content:center; min-height:44px; font-size:14px; font-weight:600; }
+ .studio-ui .mobile-stock-actions .mobile-scan-link { gap:8px; padding:10px 16px; border-radius:10px; background:var(--accent); color:var(--on-accent); text-decoration:none; }
+ .mobile-scan-link svg { width:20px; height:20px; }
  :root {
   --bg:#f7f8fc; --surface:#fff; --rail:#fff; --text:#222636; --muted:#606779;
   --line:#e0e4ed; --accent:#4656c9; --accent-hover:#3644a9; --on-accent:#fff;

@@ -9,6 +9,8 @@
 .assist-input-row label { flex: 1; min-width: 0; }
 .assist-input-row input { width: 100%; }
 .assist-input-row button { flex: none; }
+ #assist-barcode>.assist-input-row { margin-top:14px; }
+ #assist-scan { min-height:44px; }
 #spool-assist .meta { margin: 10px 0; max-width: 75ch; }
 .assist-result { margin-top: 14px; }
 .assist-result strong { display: block; overflow-wrap: anywhere; }

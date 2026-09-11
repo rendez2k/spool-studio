@@ -16,8 +16,9 @@
     { "src": "/icons/filament-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ],
   "shortcuts": [
+    { "name": "Scan barcode", "url": "/?add=barcode", "icons": [{ "src": "/icons/filament-192.png", "sizes": "192x192" }] },
+    { "name": "Add spools", "url": "/?add=manual", "icons": [{ "src": "/icons/filament-192.png", "sizes": "192x192" }] },
     { "name": "Program filament", "url": "/nfc.html", "icons": [{ "src": "/icons/filament-192.png", "sizes": "192x192" }] },
-    { "name": "Filament library", "url": "/", "icons": [{ "src": "/icons/filament-192.png", "sizes": "192x192" }] },
-    { "name": "App & device", "url": "/app.html", "icons": [{ "src": "/icons/filament-192.png", "sizes": "192x192" }] }
+    { "name": "Filament library", "url": "/", "icons": [{ "src": "/icons/filament-192.png", "sizes": "192x192" }] }
   ]
 }

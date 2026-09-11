@@ -16,6 +16,7 @@ function libraryControls(){
  window.SpoolAssist?.controls();
  window.CollectionTools?.controls();
  window.SetupReminder?.update();
+ window.MobileEntry?.resume();
 }
 function applyLibrary(value){
  if(value.accountKey!==dataset.accountKey){
