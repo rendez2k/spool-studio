@@ -1,4 +1,4 @@
-# Strata → Spool Studio receiver (v1, not deployed)
+# Strata → Spool Studio receiver (v1)
 
 Canonical receiver: `https://spool-studio.uk/?view=match#strata-transfer=<32 lowercase hexadecimal characters>&sender=<encoded exact sender origin>`.
 
@@ -16,7 +16,7 @@ The adapter uses FilamentMatcher.readProject and prepareMatchProject, retains th
 
 Implementation: out/strata-transfer.js (protocol/lifecycle), out/strata-transfer-ui.js (matcher adapter and status/cancel UI). No account tokens or inventory are sent to Strata.
 
-Local integration fixture: run `node .local/studio-preview.mjs` in this repository, then target `http://127.0.0.1:18769` from a loopback Strata sender. This ignored fixture serves synthetic inventory and rejects non-GET requests. Do not use it as a production server. No production deployment is included in this change.
+Local integration fixture: run `node .local/studio-preview.mjs` in this repository, then target `http://127.0.0.1:18769` from a loopback Strata sender. This ignored fixture serves synthetic inventory and rejects non-GET requests. Do not use it as a production server. Publish the receiver before enabling the sender's production handoff button.
 
 ## Validation
 
