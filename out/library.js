@@ -6,7 +6,7 @@ function libraryControls(){
  $('account-link').href=signedIn?'/signout-with-chatgpt?return_to=%2F':'/signin-with-chatgpt?return_to=%2F';
  $('account-label').textContent=signedIn?'Your private library':'Sign in for your own library';
  $('add-spool').disabled=libraryBusy||dataset.status!=='complete';
- $('match-files').disabled=libraryBusy||dataset.status!=='complete';
+ $('match-files').disabled=libraryBusy||matchLoading||dataset.status!=='complete';
  $('nfc-sync').disabled=libraryBusy||dataset.status!=='complete';
  $('save-spool').disabled=libraryBusy||Boolean(window.SpoolAssist?.busy());
  $('close-spool').disabled=libraryBusy;
@@ -17,6 +17,7 @@ function libraryControls(){
  window.CollectionTools?.controls();
  window.SetupReminder?.update();
  window.MobileEntry?.resume();
+ window.StrataTransferUi?.resume();
 }
 function applyLibrary(value){
  if(value.accountKey!==dataset.accountKey){
