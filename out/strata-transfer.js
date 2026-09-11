@@ -3,11 +3,11 @@ const StrataTransfer=(()=>{
  const MAX_BYTES=100*1024*1024;
  const senders=new Set(['https://strata3mf.uk','https://rendez2k.github.io']);
  const loopback=url=>url.protocol==='http:'&&['localhost','127.0.0.1'].includes(url.hostname);
- function configuration(href){
+ function configuration(href,parameter='strata-transfer'){
   const receiver=new URL(href),fragment=new URLSearchParams(receiver.hash.slice(1));
-  if(!fragment.has('strata-transfer'))return null;
-  const token=fragment.get('strata-transfer'),sender=fragment.get('sender');
-  if(fragment.getAll('strata-transfer').length!==1||fragment.getAll('sender').length!==1||!(/^[a-f0-9]{32}$/).test(token||''))throw Error('Invalid Strata transfer link. Send the project again or load its 3MF manually.');
+  if(!fragment.has(parameter))return null;
+  const token=fragment.get(parameter),sender=fragment.get('sender');
+  if((fragment.has('strata-stock')&&fragment.has('strata-transfer'))||fragment.getAll(parameter).length!==1||fragment.getAll('sender').length!==1||!(/^[a-f0-9]{32}$/).test(token||''))throw Error('Invalid Strata transfer link. Start again from Strata.');
   let source;try{source=new URL(sender)}catch{throw Error('Invalid Strata sender. Load the 3MF manually.')}
   if(source.origin!==sender||source.username||source.password||!((receiver.origin==='https://spool-studio.uk'&&senders.has(sender))||(loopback(receiver)&&loopback(source))))throw Error('This Strata sender is not supported. Load the 3MF manually.');
   return {token,sender};

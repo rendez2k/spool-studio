@@ -18,6 +18,7 @@ function libraryControls(){
  window.SetupReminder?.update();
  window.MobileEntry?.resume();
  window.StrataTransferUi?.resume();
+ window.StrataStockUi?.resume();
 }
 function applyLibrary(value){
  if(value.accountKey!==dataset.accountKey){

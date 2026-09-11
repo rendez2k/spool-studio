@@ -346,3 +346,14 @@
 .strata-transfer p{flex:1 1 280px;max-width:65ch;margin:0}
 .strata-transfer button{min-height:44px}
 @media print{.strata-transfer{display:none!important}}
+.strata-stock-dialog{width:min(720px,calc(100% - 24px));max-height:calc(100dvh - 32px);overflow:auto}
+.strata-stock-dialog p{margin:12px 0;max-width:65ch}
+.strata-stock-preview{max-height:38dvh;overflow:auto;margin:16px 0}
+.strata-stock-preview table{width:100%;border-collapse:collapse;font-size:.875rem}
+.strata-stock-preview caption{text-align:left;font-weight:600;padding:0 0 8px}
+.strata-stock-preview :is(th,td){text-align:left;padding:10px 8px;border-bottom:1px solid var(--line);vertical-align:top;overflow-wrap:anywhere;white-space:normal}
+.strata-stock-preview small{display:block;color:var(--muted);margin-top:3px}
+.strata-stock-preview .match-colour{display:inline-block;vertical-align:middle;width:20px;height:20px;margin-right:7px}
+.strata-stock-dialog .actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:10px;position:sticky;bottom:0;background:var(--surface);padding-block:10px}
+.strata-stock-dialog button{min-height:44px}
+@media(max-width:480px){.strata-stock-dialog .actions button{width:100%}.strata-stock-preview :is(th,td){padding:8px 4px}.strata-stock-preview table{table-layout:fixed}.strata-stock-preview th:first-child{width:48%}.strata-stock-preview th:last-child{width:16%}}
